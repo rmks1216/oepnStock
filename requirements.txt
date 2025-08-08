@@ -1,0 +1,61 @@
+# Core scientific computing
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+
+# Technical analysis and financial data
+TA-Lib>=0.4.25
+yfinance>=0.2.0
+pandas-ta>=0.3.14b
+python-binance>=1.0.16
+
+# Machine learning (for advanced modules)
+scikit-learn>=1.3.0
+lightgbm>=3.3.5
+optuna>=3.2.0
+
+# Data visualization (for analysis and debugging)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Korean market data APIs
+requests>=2.31.0
+websocket-client>=1.6.0
+aiohttp>=3.8.4
+
+# Database connectivity
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.6
+redis>=4.6.0
+
+# Configuration and logging
+pyyaml>=6.0
+python-dotenv>=1.0.0
+structlog>=23.1.0
+
+# Testing and development
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+black>=23.3.0
+flake8>=6.0.0
+mypy>=1.4.0
+
+# Performance and utilities
+numba>=0.57.0
+joblib>=1.3.0
+tqdm>=4.65.0
+schedule>=1.2.0
+
+# Korean-specific libraries
+beautifulsoup4>=4.12.0
+selenium>=4.10.0
+
+# Real-time data processing
+asyncio>=3.4.3
+websockets>=11.0.0
+
+# Risk management and backtesting
+backtrader>=1.9.76.123
+zipline-reloaded>=2.2.0
