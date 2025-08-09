@@ -4,7 +4,7 @@ Technical analysis calculations and utilities
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional, Union, Any
 from dataclasses import dataclass
 
 from ..config import config

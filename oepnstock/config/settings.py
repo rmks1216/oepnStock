@@ -23,6 +23,7 @@ class TradingSettings:
     initial_risk_per_trade: float = 0.02  # 2% rule for first 100 trades
     kelly_threshold_trades: int = 100  # Switch to Kelly after 100 trades
     max_correlation_exposure: float = 0.6
+    max_daily_loss_ratio: float = 0.05  # 5% maximum daily loss
     
     # Signal strength thresholds
     immediate_buy_threshold: int = 80

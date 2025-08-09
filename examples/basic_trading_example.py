@@ -102,8 +102,10 @@ class BasicTradingSystem:
             if not market_condition.tradable:
                 return {
                     'symbol': symbol,
+                    'timestamp': datetime.now(),
                     'recommendation': 'NO_TRADE',
                     'reason': 'Market conditions unfavorable',
+                    'confidence': 0.0,
                     'market_condition': market_condition,
                     'details': market_condition.warnings
                 }
@@ -115,8 +117,10 @@ class BasicTradingSystem:
             if not support_analysis.strongest_support:
                 return {
                     'symbol': symbol,
+                    'timestamp': datetime.now(),
                     'recommendation': 'NO_TRADE',
                     'reason': 'No reliable support levels found',
+                    'confidence': 0.0,
                     'support_analysis': support_analysis
                 }
             
@@ -127,8 +131,10 @@ class BasicTradingSystem:
             if not fundamental_decision.can_buy:
                 return {
                     'symbol': symbol,
+                    'timestamp': datetime.now(),
                     'recommendation': 'BLOCKED',
                     'reason': fundamental_decision.reason,
+                    'confidence': 0.0,
                     'retry_after': fundamental_decision.retry_after,
                     'warnings': fundamental_decision.warnings
                 }
@@ -145,8 +151,10 @@ class BasicTradingSystem:
             if not concentration_check.can_add:
                 return {
                     'symbol': symbol,
+                    'timestamp': datetime.now(),
                     'recommendation': 'BLOCKED',
                     'reason': 'Portfolio concentration limits',
+                    'confidence': 0.0,
                     'details': concentration_check.blocking_reasons,
                     'max_allowed': concentration_check.max_allowed_size
                 }
@@ -229,6 +237,7 @@ class BasicTradingSystem:
                 'symbol': symbol,
                 'recommendation': 'ERROR',
                 'reason': str(e),
+                'confidence': 0.0,
                 'timestamp': datetime.now()
             }
     
@@ -319,7 +328,8 @@ class BasicTradingSystem:
                 logger.error(f"Error screening {symbol}: {e}")
                 results[symbol] = {
                     'recommendation': 'ERROR',
-                    'reason': str(e)
+                    'reason': str(e),
+                    'confidence': 0.0
                 }
         
         # 매수 후보 정렬 (신뢰도 * 기대수익률)

@@ -23,6 +23,7 @@ from oepnstock.modules.critical import (
     GapTradingStrategy
 )
 from oepnstock.utils import MarketDataManager, get_logger
+from oepnstock.utils.free_data_sources import get_data_provider
 
 logger = get_logger(__name__)
 
@@ -49,6 +50,7 @@ class SimpleBacktester:
         
         # Data manager
         self.data_manager = MarketDataManager()
+        self.data_provider = get_data_provider()
         
         # Backtesting settings
         self.initial_capital = initial_capital
@@ -184,32 +186,62 @@ class SimpleBacktester:
     def _generate_trading_signal(self, symbol: str, current_date: date) -> Dict[str, Any]:
         """매매 신호 생성 (간소화된 버전)"""
         try:
-            # Mock 데이터 생성 (실제로는 시장 데이터 사용)
-            stock_data = self._create_mock_price_data(symbol, current_date)
+            # 실제 시장 데이터 사용
+            stock_data = self._get_real_price_data(symbol, current_date)
+            
+            # 데이터 충분성 확인
+            if len(stock_data) < 30:
+                # 데이터가 부족하면 기본 신호 반환
+                return {
+                    'symbol': symbol,
+                    'action': 'HOLD',
+                    'confidence': 0.0,
+                    'price': stock_data['close'].iloc[-1] if len(stock_data) > 0 else 50000,
+                    'date': current_date
+                }
             
             # 간단한 전략 규칙
             # 1. 5일 평균 > 20일 평균 (상승 추세)
             # 2. RSI < 70 (과매수 아님)
             # 3. 최근 3일 중 2일 이상 상승
             
-            ma5 = stock_data['close'].rolling(5).mean().iloc[-1]
-            ma20 = stock_data['close'].rolling(20).mean().iloc[-1]
+            ma5 = stock_data['close'].rolling(5).mean().dropna()
+            ma20 = stock_data['close'].rolling(20).mean().dropna()
+            
+            if len(ma5) == 0 or len(ma20) == 0:
+                return {
+                    'symbol': symbol,
+                    'action': 'HOLD',
+                    'confidence': 0.0,
+                    'price': stock_data['close'].iloc[-1],
+                    'date': current_date
+                }
+            
+            ma5_current = ma5.iloc[-1]
+            ma20_current = ma20.iloc[-1]
             
             # 간단한 RSI 계산
             delta = stock_data['close'].diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss
-            rsi = 100 - (100 / (1 + rs))
-            current_rsi = rsi.iloc[-1]
+            
+            # RSI 계산 시 안전장치
+            rsi_data = gain / loss
+            rsi = 100 - (100 / (1 + rsi_data))
+            rsi_clean = rsi.dropna()
+            
+            current_rsi = rsi_clean.iloc[-1] if len(rsi_clean) > 0 else 50
             
             # 최근 상승일 계산
-            recent_changes = stock_data['close'].pct_change().tail(3)
-            up_days = (recent_changes > 0).sum()
+            if len(stock_data) >= 3:
+                recent_changes = stock_data['close'].pct_change().tail(3)
+                up_days = (recent_changes > 0).sum()
+            else:
+                up_days = 1
             
             # 신호 생성
             buy_conditions = [
-                ma5 > ma20,           # 상승 추세
+                ma5_current > ma20_current,           # 상승 추세
                 current_rsi < 70,     # 과매수 아님
                 up_days >= 2          # 최근 상승 모멘텀
             ]
@@ -217,7 +249,7 @@ class SimpleBacktester:
             if all(buy_conditions):
                 action = 'BUY'
                 confidence = 0.8
-            elif ma5 < ma20 * 0.95:  # 5일 평균이 20일 평균 대비 5% 이상 하락
+            elif ma5_current < ma20_current * 0.95:  # 5일 평균이 20일 평균 대비 5% 이상 하락
                 action = 'SELL'
                 confidence = 0.6
             else:
@@ -230,8 +262,8 @@ class SimpleBacktester:
                 'confidence': confidence,
                 'price': stock_data['close'].iloc[-1],
                 'date': current_date,
-                'ma5': ma5,
-                'ma20': ma20,
+                'ma5': ma5_current,
+                'ma20': ma20_current,
                 'rsi': current_rsi
             }
             
@@ -245,8 +277,26 @@ class SimpleBacktester:
                 'date': current_date
             }
     
+    def _get_real_price_data(self, symbol: str, end_date: date) -> pd.DataFrame:
+        """실제 가격 데이터 조회"""
+        try:
+            # 실제 데이터 조회
+            hist_data = self.data_provider.get_historical_data(symbol, period="3mo")
+            
+            if hist_data is not None and not hist_data.empty:
+                # 종료일까지의 데이터만 사용 (timezone-aware comparison)
+                end_timestamp = pd.Timestamp(end_date).tz_localize(hist_data.index.tz)
+                hist_data = hist_data[hist_data.index <= end_timestamp]
+                return hist_data[['close']].rename(columns={'close': 'close'})
+            
+        except Exception as e:
+            logger.warning(f"Failed to get real data for {symbol}: {e}")
+        
+        # Fallback to mock data
+        return self._create_mock_price_data(symbol, end_date)
+    
     def _create_mock_price_data(self, symbol: str, end_date: date) -> pd.DataFrame:
-        """Mock 가격 데이터 생성"""
+        """Mock 가격 데이터 생성 (Fallback용)"""
         start_date = end_date - timedelta(days=30)
         dates = pd.date_range(start=start_date, end=end_date, freq='D')
         
@@ -261,9 +311,8 @@ class SimpleBacktester:
             prices.append(max(new_price, base_price * 0.7))
         
         return pd.DataFrame({
-            'date': dates,
             'close': prices
-        })
+        }, index=dates)
     
     def _execute_buy_order(self, portfolio: Dict, signal: Dict) -> Dict:
         """매수 주문 실행"""
@@ -483,8 +532,8 @@ def main():
         '005380': '현대차'
     }
     
-    start_date = date(2024, 1, 1)
-    end_date = date(2024, 3, 31)  # 3개월 백테스트
+    start_date = date(2023, 1, 1)
+    end_date = date(2023, 12, 31)  # 1년 백테스트
     
     print(f"📊 백테스트 기간: {start_date} ~ {end_date}")
     print(f"📈 테스트 종목: {len(test_symbols)}개")

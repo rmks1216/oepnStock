@@ -128,7 +128,7 @@ class TestIntegration(unittest.TestCase):
         
         # 결과 검증
         self.assertIsInstance(market_condition, MarketCondition)
-        self.assertIn(market_condition.regime, ['bull', 'bear', 'sideways'])
+        self.assertIn(market_condition.regime, ['strong_uptrend', 'weak_uptrend', 'sideways', 'downtrend'])
         self.assertIsInstance(market_condition.score, (int, float))
         self.assertIsInstance(market_condition.tradable, bool)
     
@@ -232,7 +232,7 @@ class TestIntegration(unittest.TestCase):
             entry_price,
             support_levels,
             resistance_levels,
-            'bull',
+            'strong_uptrend',
             self.mock_portfolio['total_value'],
             self.mock_portfolio
         )

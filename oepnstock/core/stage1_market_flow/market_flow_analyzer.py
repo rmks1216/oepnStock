@@ -377,7 +377,7 @@ class MarketFlowAnalyzer:
         if market_score < self.config.market_score_threshold:
             warnings.append(f"Market score {market_score:.1f} below threshold {self.config.market_score_threshold}")
         
-        overheated_sectors = [s.name for s in sector_analysis if s.status == 'overheated']
+        overheated_sectors = [str(s.name) for s in sector_analysis if s.status == 'overheated']
         if overheated_sectors:
             warnings.append(f"Overheated sectors: {', '.join(overheated_sectors)}")
         

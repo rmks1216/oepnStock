@@ -1,0 +1,75 @@
+{
+  "trades": [
+    {
+      "symbol": "005930",
+      "action": "BUY",
+      "shares": 10,
+      "price": 70000,
+      "amount": 700000,
+      "timestamp": "2024-08-01T09:30:00"
+    },
+    {
+      "symbol": "005930",
+      "action": "SELL",
+      "shares": 10,
+      "price": 72000,
+      "amount": 720000,
+      "pnl": 20000,
+      "pnl_pct": 2.86,
+      "timestamp": "2024-08-02T14:15:00"
+    },
+    {
+      "symbol": "000660",
+      "action": "BUY",
+      "shares": 5,
+      "price": 250000,
+      "amount": 1250000,
+      "timestamp": "2024-08-03T10:00:00"
+    },
+    {
+      "symbol": "000660",
+      "action": "SELL",
+      "shares": 5,
+      "price": 245000,
+      "amount": 1225000,
+      "pnl": -25000,
+      "pnl_pct": -2.0,
+      "timestamp": "2024-08-05T15:30:00"
+    }
+  ],
+  "daily_portfolio": [
+    {
+      "date": "2024-08-01",
+      "total_value": 10000000,
+      "cash": 9300000,
+      "positions_value": 700000,
+      "positions_count": 1,
+      "daily_pnl": 0
+    },
+    {
+      "date": "2024-08-02",
+      "total_value": 10020000,
+      "cash": 10020000,
+      "positions_value": 0,
+      "positions_count": 0,
+      "daily_pnl": 20000
+    },
+    {
+      "date": "2024-08-03",
+      "total_value": 10020000,
+      "cash": 8770000,
+      "positions_value": 1250000,
+      "positions_count": 1,
+      "daily_pnl": 0
+    },
+    {
+      "date": "2024-08-05",
+      "total_value": 9995000,
+      "cash": 9995000,
+      "positions_value": 0,
+      "positions_count": 0,
+      "daily_pnl": -25000
+    }
+  ],
+  "last_updated": "2025-08-09T13:19:40.498505"
+}

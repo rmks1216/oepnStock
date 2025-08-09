@@ -70,11 +70,11 @@ def sample_ohlcv_data():
 
 
 @pytest.fixture 
-def sample_market_data():
+def sample_market_data(sample_ohlcv_data):
     """Generate sample market index data"""
     return {
-        'kospi': sample_ohlcv_data(),
-        'kosdaq': sample_ohlcv_data()
+        'kospi': sample_ohlcv_data.copy(),
+        'kosdaq': sample_ohlcv_data.copy()
     }
 
 
@@ -87,19 +87,49 @@ def sample_sector_data():
     for sector in sectors:
         # Use different seeds for variation
         np.random.seed(hash(sector) % 1000)
-        sector_data[sector] = sample_ohlcv_data()
+        
+        # Generate OHLCV data directly instead of calling fixture
+        dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
+        base_price = 50000
+        price_data = []
+        current_price = base_price
+        
+        for i in range(100):
+            # Random walk with slight upward bias
+            change = np.random.normal(0.005, 0.02)  # 0.5% average gain, 2% volatility
+            current_price = current_price * (1 + change)
+            
+            # OHLC for the day
+            open_price = current_price
+            high_price = open_price * (1 + abs(np.random.normal(0, 0.01)))
+            low_price = open_price * (1 - abs(np.random.normal(0, 0.01)))
+            close_price = low_price + (high_price - low_price) * np.random.random()
+            
+            volume = int(np.random.normal(1000000, 300000))  # Average 1M volume
+            
+            price_data.append({
+                'open': open_price,
+                'high': high_price, 
+                'low': low_price,
+                'close': close_price,
+                'volume': max(volume, 100000)  # Minimum volume
+            })
+            
+            current_price = close_price
+        
+        sector_data[sector] = pd.DataFrame(price_data, index=dates)
     
     return sector_data
 
 
 @pytest.fixture
-def mock_api_client():
+def mock_api_client(sample_ohlcv_data, sample_market_data):
     """Mock API client for external data sources"""
     mock_client = MagicMock()
     
     # Mock responses
-    mock_client.get_stock_data.return_value = sample_ohlcv_data()
-    mock_client.get_market_data.return_value = sample_market_data()
+    mock_client.get_stock_data.return_value = sample_ohlcv_data
+    mock_client.get_market_data.return_value = sample_market_data
     mock_client.is_connected.return_value = True
     
     return mock_client
