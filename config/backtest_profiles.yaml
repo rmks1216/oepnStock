@@ -1,0 +1,102 @@
+# 백테스팅 설정 프로파일
+# 다양한 시나리오별 설정값들
+
+default:
+  name: "기본 단기매매 전략"
+  description: "5일/20일 이평선 기반 단기매매"
+  
+  backtest:
+    initial_capital: 10000000
+    rebalance_frequency: 5
+    signal_ma_short: 5
+    signal_ma_long: 20
+    signal_rsi_period: 14
+    signal_rsi_overbought: 70
+    min_recent_up_days: 2
+    ma_trend_factor: 1.0
+    sell_threshold_ratio: 0.95
+    
+  trading:
+    market_score_threshold: 70
+    max_positions: 5
+    max_single_position_ratio: 0.2
+
+aggressive:
+  name: "적극적 단기매매 전략"
+  description: "더 민감한 신호로 거래 기회 확대"
+  
+  backtest:
+    initial_capital: 10000000
+    rebalance_frequency: 3
+    signal_ma_short: 3
+    signal_ma_long: 15
+    signal_rsi_period: 10
+    signal_rsi_overbought: 75
+    min_recent_up_days: 1
+    ma_trend_factor: 0.98
+    sell_threshold_ratio: 0.97
+    
+  trading:
+    market_score_threshold: 65
+    max_positions: 7
+    max_single_position_ratio: 0.15
+
+conservative:
+  name: "보수적 단기매매 전략"
+  description: "신중한 진입/청산으로 안정성 중심"
+  
+  backtest:
+    initial_capital: 10000000
+    rebalance_frequency: 7
+    signal_ma_short: 10
+    signal_ma_long: 30
+    signal_rsi_period: 21
+    signal_rsi_overbought: 65
+    min_recent_up_days: 3
+    ma_trend_factor: 1.02
+    sell_threshold_ratio: 0.92
+    
+  trading:
+    market_score_threshold: 75
+    max_positions: 3
+    max_single_position_ratio: 0.25
+
+scalping:
+  name: "스켈핑 전략"
+  description: "초단기 매매 (매일 리밸런싱)"
+  
+  backtest:
+    initial_capital: 10000000
+    rebalance_frequency: 1
+    signal_ma_short: 2
+    signal_ma_long: 8
+    signal_rsi_period: 7
+    signal_rsi_overbought: 80
+    min_recent_up_days: 1
+    ma_trend_factor: 0.99
+    sell_threshold_ratio: 0.98
+    
+  trading:
+    market_score_threshold: 60
+    max_positions: 10
+    max_single_position_ratio: 0.1
+
+swing:
+  name: "스윙 트레이딩 전략"
+  description: "중기 추세 추종 (주간 리밸런싱)"
+  
+  backtest:
+    initial_capital: 10000000
+    rebalance_frequency: 10
+    signal_ma_short: 20
+    signal_ma_long: 60
+    signal_rsi_period: 30
+    signal_rsi_overbought: 60
+    min_recent_up_days: 4
+    ma_trend_factor: 1.05
+    sell_threshold_ratio: 0.90
+    
+  trading:
+    market_score_threshold: 80
+    max_positions: 3
+    max_single_position_ratio: 0.3

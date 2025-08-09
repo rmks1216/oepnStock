@@ -76,6 +76,10 @@ class TechnicalSettings:
 @dataclass
 class BacktestSettings:
     """Backtesting configuration"""
+    # Basic settings
+    initial_capital: int = 10000000  # 1000만원
+    rebalance_frequency: int = 5     # 5일마다 리밸런싱
+    
     # Walk-forward analysis
     training_window_days: int = 252  # 1 year
     testing_window_days: int = 63   # 3 months
@@ -90,6 +94,26 @@ class BacktestSettings:
     # Scenario weights
     scenario_weights: Dict[str, float] = None
     
+    # Test symbols (Korean stocks)
+    test_symbols: list = None
+    symbol_names: Dict[str, str] = None
+    
+    # Test periods
+    default_start_date: str = "2023-01-01"
+    default_end_date: str = "2023-12-31"
+    
+    # Signal generation parameters
+    signal_ma_short: int = 5         # 단기 이평선
+    signal_ma_long: int = 20         # 장기 이평선  
+    signal_rsi_period: int = 14      # RSI 기간
+    signal_rsi_oversold: int = 30    # RSI 과매도
+    signal_rsi_overbought: int = 70  # RSI 과매수
+    min_recent_up_days: int = 2      # 최근 상승일 최소 기준
+    
+    # Entry/Exit conditions
+    ma_trend_factor: float = 1.0     # 이평선 상승 추세 기준 (MA5 > MA20)
+    sell_threshold_ratio: float = 0.95  # 매도 임계값 (MA5 < MA20 * 0.95)
+    
     def __post_init__(self):
         if self.scenario_weights is None:
             self.scenario_weights = {
@@ -97,6 +121,18 @@ class BacktestSettings:
                 "bear": 0.3,
                 "sideways": 0.3,
                 "high_volatility": 0.2
+            }
+        
+        if self.test_symbols is None:
+            self.test_symbols = ['005930', '000660', '035420', '055550', '005380']
+        
+        if self.symbol_names is None:
+            self.symbol_names = {
+                '005930': '삼성전자',
+                '000660': 'SK하이닉스', 
+                '035420': 'NAVER',
+                '055550': '신한지주',
+                '005380': '현대차'
             }
 
 

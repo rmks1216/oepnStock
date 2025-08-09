@@ -24,6 +24,7 @@ from oepnstock.modules.critical import (
 )
 from oepnstock.utils import MarketDataManager, get_logger
 from oepnstock.utils.free_data_sources import get_data_provider
+from oepnstock.config.settings import config
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,10 @@ class SimpleBacktester:
     실제 백테스팅에서는 생존편향, 전진편향, 거래비용 등을 더 정교하게 고려해야 합니다.
     """
     
-    def __init__(self, initial_capital: float = 10000000):
+    def __init__(self, custom_config=None):
+        # Use provided config or default global config
+        self.config = custom_config if custom_config else config
+        
         # Trading system components
         self.market_analyzer = MarketFlowAnalyzer()
         self.support_detector = SupportDetector()
@@ -52,28 +56,38 @@ class SimpleBacktester:
         self.data_manager = MarketDataManager()
         self.data_provider = get_data_provider()
         
-        # Backtesting settings
-        self.initial_capital = initial_capital
+        # Backtesting settings from config
+        self.initial_capital = self.config.backtest.initial_capital
         self.trading_costs = {
-            'commission': 0.00015,  # 0.015% 수수료
-            'tax': 0.0023,          # 0.23% 거래세 (매도시만)
-            'slippage': 0.001       # 0.1% 슬리피지
+            'commission': self.config.costs.commission_buy,
+            'tax': self.config.costs.tax,
+            'slippage': self.config.costs.slippage_market
         }
         
-    def run_backtest(self, symbols: List[str], start_date: date, end_date: date,
-                    rebalance_frequency: int = 5) -> Dict[str, Any]:
+    def run_backtest(self, symbols: List[str] = None, start_date: date = None, 
+                    end_date: date = None, rebalance_frequency: int = None) -> Dict[str, Any]:
         """
         백테스트 실행
         
         Args:
-            symbols: 테스트할 종목 리스트
-            start_date: 백테스트 시작일
-            end_date: 백테스트 종료일 
-            rebalance_frequency: 리밸런싱 주기 (일)
+            symbols: 테스트할 종목 리스트 (None이면 설정값 사용)
+            start_date: 백테스트 시작일 (None이면 설정값 사용)
+            end_date: 백테스트 종료일 (None이면 설정값 사용)
+            rebalance_frequency: 리밸런싱 주기 (일) (None이면 설정값 사용)
             
         Returns:
             Dict: 백테스트 결과
         """
+        # Use config defaults if not provided
+        if symbols is None:
+            symbols = self.config.backtest.test_symbols
+        if start_date is None:
+            start_date = date.fromisoformat(self.config.backtest.default_start_date)
+        if end_date is None:
+            end_date = date.fromisoformat(self.config.backtest.default_end_date)
+        if rebalance_frequency is None:
+            rebalance_frequency = self.config.backtest.rebalance_frequency
+            
         logger.info(f"Starting backtest: {start_date} to {end_date}, {len(symbols)} symbols")
         
         # 백테스트 상태 초기화
@@ -200,15 +214,15 @@ class SimpleBacktester:
                     'date': current_date
                 }
             
-            # 간단한 전략 규칙
-            # 1. 5일 평균 > 20일 평균 (상승 추세)
-            # 2. RSI < 70 (과매수 아님)
-            # 3. 최근 3일 중 2일 이상 상승
+            # 설정 기반 전략 규칙
+            # 1. 단기 평균 > 장기 평균 (상승 추세)
+            # 2. RSI < 과매수 임계값 (과매수 아님)
+            # 3. 최근 N일 중 M일 이상 상승
             
-            ma5 = stock_data['close'].rolling(5).mean().dropna()
-            ma20 = stock_data['close'].rolling(20).mean().dropna()
+            ma_short = stock_data['close'].rolling(self.config.backtest.signal_ma_short).mean().dropna()
+            ma_long = stock_data['close'].rolling(self.config.backtest.signal_ma_long).mean().dropna()
             
-            if len(ma5) == 0 or len(ma20) == 0:
+            if len(ma_short) == 0 or len(ma_long) == 0:
                 return {
                     'symbol': symbol,
                     'action': 'HOLD',
@@ -217,13 +231,14 @@ class SimpleBacktester:
                     'date': current_date
                 }
             
-            ma5_current = ma5.iloc[-1]
-            ma20_current = ma20.iloc[-1]
+            ma_short_current = ma_short.iloc[-1]
+            ma_long_current = ma_long.iloc[-1]
             
-            # 간단한 RSI 계산
+            # 설정 기반 RSI 계산
             delta = stock_data['close'].diff()
-            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rsi_period = self.config.backtest.signal_rsi_period
+            gain = (delta.where(delta > 0, 0)).rolling(window=rsi_period).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=rsi_period).mean()
             
             # RSI 계산 시 안전장치
             rsi_data = gain / loss
@@ -232,24 +247,24 @@ class SimpleBacktester:
             
             current_rsi = rsi_clean.iloc[-1] if len(rsi_clean) > 0 else 50
             
-            # 최근 상승일 계산
+            # 최근 상승일 계산 (설정 기반)
             if len(stock_data) >= 3:
                 recent_changes = stock_data['close'].pct_change().tail(3)
                 up_days = (recent_changes > 0).sum()
             else:
                 up_days = 1
             
-            # 신호 생성
+            # 설정 기반 신호 생성
             buy_conditions = [
-                ma5_current > ma20_current,           # 상승 추세
-                current_rsi < 70,     # 과매수 아님
-                up_days >= 2          # 최근 상승 모멘텀
+                ma_short_current > ma_long_current * self.config.backtest.ma_trend_factor,  # 상승 추세
+                current_rsi < self.config.backtest.signal_rsi_overbought,     # 과매수 아님
+                up_days >= self.config.backtest.min_recent_up_days            # 최근 상승 모멘텀
             ]
             
             if all(buy_conditions):
                 action = 'BUY'
                 confidence = 0.8
-            elif ma5_current < ma20_current * 0.95:  # 5일 평균이 20일 평균 대비 5% 이상 하락
+            elif ma_short_current < ma_long_current * self.config.backtest.sell_threshold_ratio:
                 action = 'SELL'
                 confidence = 0.6
             else:
@@ -262,8 +277,8 @@ class SimpleBacktester:
                 'confidence': confidence,
                 'price': stock_data['close'].iloc[-1],
                 'date': current_date,
-                'ma5': ma5_current,
-                'ma20': ma20_current,
+                'ma_short': ma_short_current,
+                'ma_long': ma_long_current,
                 'rsi': current_rsi
             }
             
@@ -516,38 +531,28 @@ class SimpleBacktester:
 
 def main():
     """메인 실행 함수"""
-    print("=== oepnStock Backtesting Example ===")
+    print("=== oepnStock Backtesting Example (Config-Based) ===")
     print()
     
-    # 백테스터 초기화
-    backtester = SimpleBacktester(initial_capital=10000000)  # 1000만원
+    # 백테스터 초기화 (설정 기반)
+    backtester = SimpleBacktester()
     
-    # 테스트 설정
-    test_symbols = ['005930', '000660', '035420', '055550', '005380']
-    symbol_names = {
-        '005930': '삼성전자',
-        '000660': 'SK하이닉스',
-        '035420': 'NAVER',
-        '055550': '신한지주',
-        '005380': '현대차'
-    }
-    
-    start_date = date(2023, 1, 1)
-    end_date = date(2023, 12, 31)  # 1년 백테스트
+    # 설정에서 테스트 파라미터 가져오기
+    test_symbols = config.backtest.test_symbols
+    symbol_names = config.backtest.symbol_names
+    start_date = date.fromisoformat(config.backtest.default_start_date)
+    end_date = date.fromisoformat(config.backtest.default_end_date)
     
     print(f"📊 백테스트 기간: {start_date} ~ {end_date}")
     print(f"📈 테스트 종목: {len(test_symbols)}개")
     print(f"💰 초기 자본: {backtester.initial_capital:,}원")
+    print(f"🔄 리밸런싱 주기: {config.backtest.rebalance_frequency}일")
+    print(f"📈 신호 설정: MA({config.backtest.signal_ma_short},{config.backtest.signal_ma_long}), RSI({config.backtest.signal_rsi_period})")
     print()
     
-    # 백테스트 실행
+    # 백테스트 실행 (설정 기반 - 파라미터 생략하면 설정값 사용)
     print("🔄 백테스트 실행 중...")
-    results = backtester.run_backtest(
-        symbols=test_symbols,
-        start_date=start_date,
-        end_date=end_date,
-        rebalance_frequency=5  # 5일마다 리밸런싱
-    )
+    results = backtester.run_backtest()
     
     if 'error' in results:
         print(f"❌ 백테스트 오류: {results['error']}")

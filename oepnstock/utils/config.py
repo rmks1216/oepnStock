@@ -10,6 +10,10 @@ from pathlib import Path
 from dataclasses import asdict
 
 from ..config.settings import config as main_config
+from . import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class ConfigManager:
@@ -64,6 +68,59 @@ class ConfigManager:
         """Export current configuration as dictionary"""
         return main_config.to_dict()
     
+    def load_backtest_profile(self, profile_name: str = "default") -> Dict[str, Any]:
+        """Load backtesting profile from YAML file"""
+        profiles_path = Path("config/backtest_profiles.yaml")
+        
+        if not profiles_path.exists():
+            logger.warning(f"Backtest profiles file not found: {profiles_path}")
+            return {}
+        
+        try:
+            with open(profiles_path, 'r', encoding='utf-8') as f:
+                profiles = yaml.safe_load(f)
+            
+            if profile_name not in profiles:
+                available = list(profiles.keys())
+                logger.warning(f"Profile '{profile_name}' not found. Available: {available}")
+                return profiles.get('default', {})
+            
+            profile = profiles[profile_name]
+            logger.info(f"Loaded backtest profile: {profile.get('name', profile_name)}")
+            return profile
+            
+        except Exception as e:
+            logger.error(f"Error loading backtest profile: {e}")
+            return {}
+    
+    def apply_backtest_profile(self, profile_name: str = "default"):
+        """Apply backtest profile to create new config instance"""
+        from ..config.settings import Config
+        
+        profile_data = self.load_backtest_profile(profile_name)
+        if not profile_data:
+            return main_config
+        
+        # Create new config instance
+        new_config = Config()
+        
+        # Apply backtest settings
+        if 'backtest' in profile_data:
+            bt_settings = profile_data['backtest']
+            for key, value in bt_settings.items():
+                if hasattr(new_config.backtest, key):
+                    setattr(new_config.backtest, key, value)
+        
+        # Apply trading settings
+        if 'trading' in profile_data:
+            td_settings = profile_data['trading']
+            for key, value in td_settings.items():
+                if hasattr(new_config.trading, key):
+                    setattr(new_config.trading, key, value)
+        
+        logger.info(f"Applied profile '{profile_name}': {profile_data.get('description', 'No description')}")
+        return new_config
+
     def validate_config(self, config_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Validate configuration data
