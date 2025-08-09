@@ -1,0 +1,11 @@
+{
+  "last_sync": "2025-08-09T18:24:53.865183",
+  "yaml_hash": "9993b635fe572d10793c68b89906aee6",
+  "md_hashes": {
+    "docs/strategies/AGGRESSIVE_STRATEGY.md": "6d8269be1a9418d172b347f8697db95a",
+    "docs/strategies/SCALPING_STRATEGY.md": "107968775e7bdcd49cbb56eae1bec5b7",
+    "docs/strategies/DEFAULT_STRATEGY.md": "4f66ac801eeb4534f821c52beaeefcec",
+    "docs/strategies/CONSERVATIVE_STRATEGY.md": "dbfe21a88354036f543724590917baa1",
+    "docs/strategies/SWING_STRATEGY.md": "a3f5118f39fe0b2470bc48c1c61c54b7"
+  }
+}

@@ -231,8 +231,46 @@ class CustomStrategy:
 - **뉴스/공시**: 네이버금융, 다트 API 연동  
 - **백테스팅 확장**: QuantConnect, Zipline 통합
 
-## 📚 참고 자료
+## 📚 문서 및 가이드
 
+### 📋 전략 문서 시스템
+- **[전략 가이드](docs/STRATEGY_GUIDE.md)**: 백테스팅 전략 종합 가이드
+- **[전략 검증](docs/STRATEGY_VALIDATION.md)**: 전략 검증 및 비교 방법론
+- **개별 전략 문서**: `docs/strategies/` 디렉토리
+  - [기본 전략](docs/strategies/DEFAULT_STRATEGY.md)
+  - [적극적 전략](docs/strategies/AGGRESSIVE_STRATEGY.md)  
+  - [보수적 전략](docs/strategies/CONSERVATIVE_STRATEGY.md)
+  - [스켈핑 전략](docs/strategies/SCALPING_STRATEGY.md)
+  - [스윙 전략](docs/strategies/SWING_STRATEGY.md)
+
+### 🎯 백테스팅 프로파일 관리
+```bash
+# YAML 설정 파일
+config/backtest_profiles.yaml
+
+# 자동 문서 동기화
+python utils/strategy_docs_sync.py
+
+# 다중 전략 비교 실행
+python examples/backtest_with_profiles.py
+```
+
+### 📊 전략 비교 실행
+| 전략 | 리밸런싱 | MA조합 | RSI | 최대포지션 | 시장기준점 |
+|---|---|---|---|---|---|
+| `default` | 5일 | MA(5,20) | 14일 | 5개 | 70점 |
+| `aggressive` | 3일 | MA(3,15) | 10일 | 7개 | 65점 |
+| `conservative` | 7일 | MA(10,30) | 21일 | 3개 | 75점 |
+| `scalping` | 1일 | MA(2,8) | 7일 | 10개 | 60점 |
+| `swing` | 10일 | MA(20,60) | 30일 | 3개 | 80점 |
+
+### 🔄 문서 업데이트 워크플로우
+1. **YAML 수정** → `config/backtest_profiles.yaml`
+2. **자동 동기화** → `python utils/strategy_docs_sync.py`
+3. **검증 실행** → `python examples/backtest_with_profiles.py`
+4. **문서 확인** → `docs/strategies/*.md` 업데이트 확인
+
+### 📖 기존 문서
 - [GUIDE.md](GUIDE.md): 상세한 전략 가이드 (한국어)
 - [MODULE_GUIDE.md](MODULE_GUIDE.md): 모듈별 상세 설명 (한국어)  
 - [CLAUDE.md](CLAUDE.md): 개발자를 위한 아키텍처 가이드
