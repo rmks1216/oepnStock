@@ -123,3 +123,4 @@ When implementing this system:
 The documentation provides extensive implementation details for each module, including specific algorithms, thresholds, and Korean market microstructure considerations in GUIDE.md and MODULE_GUIDE.md.
 - docs/PROJECT_STATUS.md 파일은 이전 작업의 마지막 히스토리를 담은 파일이다. 새로운 터미널을 열어  작업을 시작할 때 최초 1회 해당 내용에 대한 검토가 필요하다.
 - /feedback.md 파일은 피드백을 참조하라는 지시가 있을 때 참조해야하는 파일이다. claude 의 산출물에 대한 사용자의 피드백이 작성된다.
+- feedback.md 파일은 사용자의 피드백을 확인하기 위한 파일로 커밋이나 푸시되어야할 파일이 아니다.

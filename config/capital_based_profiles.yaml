@@ -1,0 +1,159 @@
+# 투자금액별 맞춤 전략 프로파일
+# 소액 투자자를 위한 현실적 설정
+
+# 100만원 투자자 (초보수적)
+conservative_100k:
+  name: 초소액 보수적 전략 (100만원)
+  description: 초보 투자자를 위한 안전 우선 전략
+  capital_range: [500000, 1500000]  # 50만원~150만원
+  backtest:
+    initial_capital: 1000000
+    signal_ma_short: 10
+    signal_ma_long: 30
+    signal_rsi_period: 21
+    signal_rsi_overbought: 60  # 더 보수적
+    min_recent_up_days: 3
+    ma_trend_factor: 1.05      # 더 확실한 상승 추세
+    sell_threshold_ratio: 0.90 # 빠른 손절
+    rebalance_frequency: 10    # 더 긴 주기
+  trading:
+    max_positions: 2
+    max_single_position_ratio: 0.5
+    market_score_threshold: 80  # 더 높은 기준
+    daily_target: 0.0005       # 0.05%
+    risk_level: "초보수적"
+    max_daily_trades: 2
+    preferred_stocks: ["대형주", "우량주"]
+    sector_limit: 1.0
+  risk_management:
+    daily_max_loss: -0.015      # -1.5% (더 보수적)
+    position_stop_loss: -0.01   # -1%
+    consecutive_loss_limit: 2   # 연속 2회
+    monthly_drawdown: -0.03     # -3%
+
+# 300만원 투자자 (보수적)  
+conservative_300k:
+  name: 소액 보수적 전략 (300만원)
+  description: 소액 투자자를 위한 안정성 중심 전략
+  capital_range: [1500001, 4000000]  # 150만원~400만원
+  backtest:
+    initial_capital: 3000000
+    signal_ma_short: 10
+    signal_ma_long: 30
+    signal_rsi_period: 21
+    signal_rsi_overbought: 65
+    min_recent_up_days: 3
+    ma_trend_factor: 1.03
+    sell_threshold_ratio: 0.92
+    rebalance_frequency: 8
+  trading:
+    max_positions: 3
+    max_single_position_ratio: 0.33
+    market_score_threshold: 78
+    daily_target: 0.0006       # 0.06%
+    risk_level: "보수적"
+    max_daily_trades: 3
+    preferred_stocks: ["대형주", "우량주"]
+    sector_limit: 0.6
+  risk_management:
+    daily_max_loss: -0.018      # -1.8%
+    position_stop_loss: -0.012  # -1.2%
+    consecutive_loss_limit: 3
+    monthly_drawdown: -0.04     # -4%
+
+# 500만원 투자자 (보수적)
+conservative_500k:
+  name: 중액 보수적 전략 (500만원)  
+  description: 중간 규모 투자자를 위한 균형 전략
+  capital_range: [4000001, 7000000]  # 400만원~700만원
+  backtest:
+    initial_capital: 5000000
+    signal_ma_short: 10
+    signal_ma_long: 30
+    signal_rsi_period: 21
+    signal_rsi_overbought: 65
+    min_recent_up_days: 3
+    ma_trend_factor: 1.02
+    sell_threshold_ratio: 0.92
+    rebalance_frequency: 7
+  trading:
+    max_positions: 3
+    max_single_position_ratio: 0.33
+    market_score_threshold: 75
+    daily_target: 0.0007       # 0.07%
+    risk_level: "보수적"
+    max_daily_trades: 4
+    preferred_stocks: ["대형주", "중형주"]
+    sector_limit: 0.5
+  risk_management:
+    daily_max_loss: -0.02       # -2%
+    position_stop_loss: -0.015  # -1.5%
+    consecutive_loss_limit: 3
+    monthly_drawdown: -0.05     # -5%
+
+# 1000만원 투자자 (균형적)
+conservative_1000k:
+  name: 표준 보수적 전략 (1000만원)
+  description: 표준 투자자를 위한 Enhanced 전략 
+  capital_range: [7000001, 20000000]  # 700만원~2000만원
+  backtest:
+    initial_capital: 10000000
+    signal_ma_short: 10
+    signal_ma_long: 30
+    signal_rsi_period: 21
+    signal_rsi_overbought: 65
+    min_recent_up_days: 3
+    ma_trend_factor: 1.02
+    sell_threshold_ratio: 0.92
+    rebalance_frequency: 7
+  trading:
+    max_positions: 4
+    max_single_position_ratio: 0.25
+    market_score_threshold: 75
+    daily_target: 0.0008       # 0.08%
+    risk_level: "균형적"
+    max_daily_trades: 6
+    preferred_stocks: ["모든 유형"]
+    sector_limit: 0.4
+  risk_management:
+    daily_max_loss: -0.02       # -2%
+    position_stop_loss: -0.015  # -1.5%
+    consecutive_loss_limit: 3
+    monthly_drawdown: -0.05     # -5%
+
+# 자동 조정 파라미터
+auto_adjustment:
+  performance_review_period: 30  # 30일마다 성과 검토
+  
+  # 월간 수익률에 따른 조정
+  monthly_return_adjustments:
+    excellent: # 월 5% 이상
+      action: "reduce_risk"
+      position_size_multiplier: 0.8
+      entry_threshold_increase: 5
+      
+    good: # 월 2~5%
+      action: "maintain"
+      
+    poor: # 월 0~-3%  
+      action: "increase_caution"
+      position_size_multiplier: 0.9
+      entry_threshold_increase: 3
+      
+    bad: # 월 -3% 이하
+      action: "pause_trading"
+      pause_days: 5
+      force_review: true
+
+  # 변동성에 따른 조정
+  volatility_adjustments:
+    high: # VIX > 30
+      position_multiplier: 0.6
+      entry_threshold_increase: 10
+      
+    medium: # VIX 20-30
+      position_multiplier: 0.8
+      entry_threshold_increase: 5
+      
+    low: # VIX < 20
+      position_multiplier: 1.0
