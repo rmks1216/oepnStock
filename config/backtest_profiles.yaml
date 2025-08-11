@@ -1,4 +1,7 @@
-# 백테스팅 설정 프로파일\n# 다양한 시나리오별 설정값들\n\naggressive:
+# 백테스팅 설정 프로파일
+# 다양한 시나리오별 설정값들
+
+aggressive:
   name: 적극적 단기매매 전략
   description: 더 민감한 신호로 거래 기회 확대
   backtest:
@@ -50,8 +53,8 @@ default:
     market_score_threshold: 70
     max_positions: 5
 conservative:
-  name: 보수적 단기매매 전략
-  description: 신중한 진입/청산으로 안정성 중심
+  name: Conservative Enhanced 전략
+  description: Enhanced 기능을 이식한 안정성 극대화 전략
   backtest:
     initial_capital: 10000000
     signal_ma_short: 10
@@ -63,9 +66,9 @@ conservative:
     sell_threshold_ratio: 0.92
     rebalance_frequency: 7
   trading:
-    max_single_position_ratio: 0.25
+    max_single_position_ratio: 0.2
     market_score_threshold: 75
-    max_positions: 3
+    max_positions: 4
 swing:
   name: 스윙 트레이딩 전략
   description: 중기 추세 추종 (주간 리밸런싱)
