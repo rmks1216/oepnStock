@@ -1,0 +1,6 @@
+{
+  "created_at": "2025-08-11T17:28:44.995391",
+  "yaml_file": "config/backtest_profiles.yaml",
+  "docs_dir": "docs/strategies",
+  "backup_path": "backups/sync_backup_20250811_172844"
+}
