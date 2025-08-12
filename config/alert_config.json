@@ -1,0 +1,171 @@
+{
+  "notification_settings": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "${TELEGRAM_BOT_TOKEN}",
+      "chat_id": "${TELEGRAM_CHAT_ID}",
+      "default_channels": ["telegram"]
+    },
+    "email": {
+      "enabled": true,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "email": "${EMAIL_ADDRESS}",
+      "password": "${EMAIL_PASSWORD}",
+      "recipients": ["${ALERT_EMAIL_RECIPIENT}"]
+    }
+  },
+  
+  "alert_rules": {
+    "emergency_alerts": {
+      "daily_loss_limit": {
+        "threshold": -0.02,
+        "cooldown_minutes": 30,
+        "channels": ["telegram", "email"],
+        "enabled": true
+      },
+      "consecutive_loss": {
+        "threshold": 3,
+        "cooldown_minutes": 60,
+        "channels": ["telegram", "email"],
+        "enabled": true
+      },
+      "monthly_drawdown": {
+        "threshold": -0.10,
+        "cooldown_minutes": 360,
+        "channels": ["telegram", "email"],
+        "enabled": true
+      },
+      "system_error": {
+        "threshold": 0,
+        "cooldown_minutes": 15,
+        "channels": ["telegram", "email"],
+        "enabled": true
+      }
+    },
+    
+    "warning_alerts": {
+      "market_volatility": {
+        "threshold": 30.0,
+        "cooldown_minutes": 120,
+        "channels": ["telegram"],
+        "enabled": true,
+        "market_conditions": ["volatile", "bearish"]
+      },
+      "concentration_risk": {
+        "threshold": 0.40,
+        "cooldown_minutes": 240,
+        "channels": ["telegram"],
+        "enabled": true
+      },
+      "position_stop_loss": {
+        "threshold": -0.05,
+        "cooldown_minutes": 60,
+        "channels": ["telegram"],
+        "enabled": true
+      }
+    },
+    
+    "info_alerts": {
+      "target_achieved": {
+        "threshold": 0.001,
+        "cooldown_minutes": 1440,
+        "channels": ["telegram"],
+        "enabled": true
+      },
+      "trade_executed": {
+        "threshold": 0,
+        "cooldown_minutes": 0,
+        "channels": ["telegram"],
+        "enabled": true,
+        "time_conditions": ["trading_hours"]
+      },
+      "daily_report": {
+        "threshold": 0,
+        "cooldown_minutes": 1440,
+        "channels": ["telegram", "email"],
+        "enabled": true,
+        "schedule": "16:00"
+      }
+    },
+    
+    "system_status": {
+      "trading_paused": {
+        "threshold": 0,
+        "cooldown_minutes": 60,
+        "channels": ["telegram"],
+        "enabled": true
+      },
+      "trading_resumed": {
+        "threshold": 0,
+        "cooldown_minutes": 60,
+        "channels": ["telegram"],
+        "enabled": true
+      },
+      "system_startup": {
+        "threshold": 0,
+        "cooldown_minutes": 0,
+        "channels": ["telegram"],
+        "enabled": true
+      }
+    }
+  },
+  
+  "reporting_schedule": {
+    "daily_report": {
+      "enabled": true,
+      "time": "16:00",
+      "channels": ["telegram", "email"],
+      "include_charts": true
+    },
+    "weekly_report": {
+      "enabled": true,
+      "day": "friday",
+      "time": "16:30",
+      "channels": ["email"],
+      "include_charts": true
+    },
+    "monthly_report": {
+      "enabled": true,
+      "day": "last_business_day",
+      "time": "17:00",
+      "channels": ["email"],
+      "include_charts": true,
+      "include_analysis": true
+    }
+  },
+  
+  "risk_management": {
+    "escalation_rules": {
+      "consecutive_emergency_alerts": {
+        "threshold": 3,
+        "action": "pause_trading",
+        "notification": "emergency_stop"
+      },
+      "high_volatility_trading": {
+        "vix_threshold": 35,
+        "action": "reduce_position_size",
+        "notification": "volatility_warning"
+      }
+    },
+    
+    "auto_responses": {
+      "daily_loss_exceeded": {
+        "action": "stop_trading_for_day",
+        "send_notification": true
+      },
+      "system_error": {
+        "action": "safe_shutdown",
+        "send_notification": true
+      }
+    }
+  },
+  
+  "message_templates": {
+    "korean": {
+      "daily_report": "📊 일일 거래 결과\n수익률: {daily_return:.2%}\n거래: {trade_count}회\n승률: {win_rate:.1%}",
+      "risk_warning": "⚠️ 리스크 경고\n{risk_type}: {current_value}\n권장 조치: {recommendation}",
+      "target_achieved": "🎯 목표 달성!\n{target_type}: {achieved_value:.2%}\n축하합니다! 🎉"
+    }
+  }
+}
