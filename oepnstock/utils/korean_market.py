@@ -89,8 +89,7 @@ class KoreanMarketUtils:
     @staticmethod
     def is_trading_day(check_date: Optional[date] = None) -> bool:
         """
-        Check if given date is a trading day (excluding weekends and holidays)
-        Note: This is a simplified version. Real implementation should include Korean holidays.
+        Check if given date is a trading day (excluding weekends and Korean holidays)
         """
         if check_date is None:
             check_date = date.today()
@@ -99,9 +98,92 @@ class KoreanMarketUtils:
         if check_date.weekday() >= 5:  # Saturday=5, Sunday=6
             return False
         
-        # TODO: Add Korean holiday calendar integration
-        # For now, just return True for weekdays
+        # Check Korean holidays
+        if KoreanMarketUtils._is_korean_holiday(check_date):
+            return False
+        
         return True
+    
+    @staticmethod
+    def _is_korean_holiday(check_date: date) -> bool:
+        """
+        Check if the given date is a Korean public holiday
+        Includes major holidays that affect stock market trading
+        """
+        year = check_date.year
+        month = check_date.month
+        day = check_date.day
+        
+        # Fixed holidays
+        fixed_holidays = [
+            (1, 1),   # New Year's Day (신정)
+            (3, 1),   # Independence Movement Day (삼일절)
+            (5, 5),   # Children's Day (어린이날)
+            (6, 6),   # Memorial Day (현충일)
+            (8, 15),  # Liberation Day (광복절)
+            (10, 3),  # National Foundation Day (개천절)
+            (10, 9),  # Hangeul Day (한글날)
+            (12, 25), # Christmas Day (성탄절)
+        ]
+        
+        if (month, day) in fixed_holidays:
+            return True
+        
+        # Variable holidays (Lunar calendar based - simplified approximation)
+        # Note: For production use, consider using a proper lunar calendar library
+        lunar_holidays = KoreanMarketUtils._get_lunar_holidays(year)
+        
+        if check_date in lunar_holidays:
+            return True
+        
+        # Buddha's Birthday (부처님오신날) - 8th day of 4th lunar month
+        # Chuseok (추석) - 15th day of 8th lunar month (and surrounding days)
+        # These are approximated - for exact dates, use lunar calendar conversion
+        
+        return False
+    
+    @staticmethod
+    def _get_lunar_holidays(year: int) -> List[date]:
+        """
+        Get approximate dates for lunar calendar based holidays
+        Note: This is a simplified approximation. For exact dates, 
+        use a proper lunar calendar conversion library.
+        """
+        # Approximate lunar holidays for 2024-2026
+        # In production, this should be replaced with proper lunar calendar calculation
+        lunar_holidays_by_year = {
+            2024: [
+                date(2024, 2, 9),   # Lunar New Year's Day
+                date(2024, 2, 10),  # Lunar New Year 2nd day
+                date(2024, 2, 11),  # Lunar New Year 3rd day
+                date(2024, 2, 12),  # Lunar New Year alternative holiday
+                date(2024, 5, 15),  # Buddha's Birthday
+                date(2024, 9, 16),  # Chuseok 1st day
+                date(2024, 9, 17),  # Chuseok (Mid-Autumn Festival)
+                date(2024, 9, 18),  # Chuseok 3rd day
+            ],
+            2025: [
+                date(2025, 1, 28),  # Lunar New Year's Day
+                date(2025, 1, 29),  # Lunar New Year 2nd day
+                date(2025, 1, 30),  # Lunar New Year 3rd day
+                date(2025, 5, 5),   # Buddha's Birthday (overlaps with Children's Day)
+                date(2025, 10, 5),  # Chuseok 1st day
+                date(2025, 10, 6),  # Chuseok (Mid-Autumn Festival)
+                date(2025, 10, 7),  # Chuseok 3rd day
+                date(2025, 10, 8),  # Chuseok alternative holiday
+            ],
+            2026: [
+                date(2026, 2, 16),  # Lunar New Year's Day
+                date(2026, 2, 17),  # Lunar New Year 2nd day
+                date(2026, 2, 18),  # Lunar New Year 3rd day
+                date(2026, 5, 24),  # Buddha's Birthday
+                date(2026, 9, 24),  # Chuseok 1st day
+                date(2026, 9, 25),  # Chuseok (Mid-Autumn Festival)
+                date(2026, 9, 26),  # Chuseok 3rd day
+            ]
+        }
+        
+        return lunar_holidays_by_year.get(year, [])
     
     @staticmethod
     def get_market_cap_category(market_cap_krw: int) -> str:

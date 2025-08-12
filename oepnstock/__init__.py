@@ -10,9 +10,30 @@ __version__ = "1.0.0"
 __author__ = "Claude Code"
 __description__ = "Korean Stock Market Trading System with 4-Stage Checklist Strategy"
 
-from .core import *
-from .modules import *
-from .utils import *
+# Core strategy components
+from .core import (
+    MarketFlowAnalyzer,
+    SupportDetector,
+    SignalConfirmator,
+    RiskManager
+)
+
+# Critical modules  
+from .modules import (
+    FundamentalEventFilter,
+    PortfolioConcentrationManager,
+    GapTradingStrategy
+)
+
+# Utility functions
+from .utils import (
+    get_logger,
+    setup_logging,
+    ConfigManager,
+    MarketDataManager,
+    TechnicalIndicators,
+    KoreanMarketUtils
+)
 
 # Core strategy stages
 STRATEGY_STAGES = [
@@ -28,3 +49,34 @@ MODULE_PHASES = {
     "performance": ["volatility_adaptive", "order_book", "correlation_risk"], 
     "advanced": ["ml_validator", "intraday_time"]
 }
+
+# Explicit exports
+__all__ = [
+    # Core strategy components
+    "MarketFlowAnalyzer",
+    "SupportDetector", 
+    "SignalConfirmator",
+    "RiskManager",
+    
+    # Critical modules
+    "FundamentalEventFilter",
+    "PortfolioConcentrationManager",
+    "GapTradingStrategy",
+    
+    # Utility functions
+    "get_logger",
+    "setup_logging",
+    "ConfigManager", 
+    "MarketDataManager",
+    "TechnicalIndicators",
+    "KoreanMarketUtils",
+    
+    # Constants
+    "STRATEGY_STAGES",
+    "MODULE_PHASES",
+    
+    # Package metadata
+    "__version__",
+    "__author__",
+    "__description__"
+]

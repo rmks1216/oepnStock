@@ -8,11 +8,38 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, date
 import re
 from enum import Enum
+import requests
+import json
 
 from ...config import config
 from ...utils import get_logger
 
 logger = get_logger(__name__)
+
+
+class FundamentalFilterError(Exception):
+    """Base exception for fundamental filter errors"""
+    pass
+
+
+class DataSourceError(FundamentalFilterError):
+    """Error accessing external data sources (APIs, databases)"""
+    pass
+
+
+class DataParsingError(FundamentalFilterError):
+    """Error parsing received data"""
+    pass
+
+
+class RateLimitError(FundamentalFilterError):
+    """API rate limit exceeded"""
+    pass
+
+
+class ConfigurationError(FundamentalFilterError):
+    """Invalid configuration or missing required settings"""
+    pass
 
 
 class RiskLevel(Enum):
@@ -153,16 +180,94 @@ class FundamentalEventFilter:
             
             return is_safe, risk_events
             
-        except Exception as e:
-            logger.error(f"Error checking fundamental events for {symbol}: {e}")
-            # Conservative approach - assume not safe
+        except RateLimitError as e:
+            logger.warning(f"API rate limit exceeded for {symbol}: {e}")
+            return True, [FundamentalEvent(
+                event_type='rate_limit',
+                title='API 호출 한도 초과 - 기본 분석으로 대체',
+                date=check_date,
+                risk_level=RiskLevel.LOW,
+                description=str(e),
+                impact_assessment='일시적 데이터 접근 제한'
+            )]
+            
+        except DataSourceError as e:
+            logger.error(f"Data source error for {symbol}: {e}")
             return False, [FundamentalEvent(
-                event_type='system_error',
-                title='시스템 오류로 인한 예방적 차단',
+                event_type='data_source_error',
+                title='데이터 소스 접근 불가 - 예방적 대기',
+                date=check_date,
+                risk_level=RiskLevel.MEDIUM,
+                description=str(e),
+                impact_assessment='외부 데이터 소스 문제'
+            )]
+            
+        except DataParsingError as e:
+            logger.error(f"Data parsing error for {symbol}: {e}")
+            return False, [FundamentalEvent(
+                event_type='data_parsing_error',
+                title='데이터 해석 오류 - 수동 확인 필요',
+                date=check_date,
+                risk_level=RiskLevel.MEDIUM,
+                description=str(e),
+                impact_assessment='데이터 형식 변경 또는 손상'
+            )]
+            
+        except ConfigurationError as e:
+            logger.error(f"Configuration error for {symbol}: {e}")
+            return False, [FundamentalEvent(
+                event_type='configuration_error',
+                title='설정 오류 - 시스템 점검 필요',
                 date=check_date,
                 risk_level=RiskLevel.HIGH,
                 description=str(e),
-                impact_assessment='시스템 오류'
+                impact_assessment='시스템 설정 문제'
+            )]
+            
+        except FundamentalFilterError as e:
+            logger.error(f"Fundamental filter error for {symbol}: {e}")
+            return False, [FundamentalEvent(
+                event_type='filter_error',
+                title='필터 시스템 오류',
+                date=check_date,
+                risk_level=RiskLevel.MEDIUM,
+                description=str(e),
+                impact_assessment='필터 로직 문제'
+            )]
+            
+        except (requests.RequestException, requests.Timeout) as e:
+            logger.warning(f"Network error for {symbol}: {e}")
+            return True, [FundamentalEvent(
+                event_type='network_error',
+                title='네트워크 연결 문제 - 재시도 권장',
+                date=check_date,
+                risk_level=RiskLevel.LOW,
+                description=str(e),
+                impact_assessment='일시적 네트워크 문제'
+            )]
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing error for {symbol}: {e}")
+            return False, [FundamentalEvent(
+                event_type='json_error',
+                title='응답 데이터 형식 오류',
+                date=check_date,
+                risk_level=RiskLevel.MEDIUM,
+                description=str(e),
+                impact_assessment='API 응답 형식 변경'
+            )]
+            
+        except Exception as e:
+            logger.error(f"Unexpected error checking fundamental events for {symbol}: {e}", 
+                        exc_info=True)
+            # Conservative approach for truly unexpected errors
+            return False, [FundamentalEvent(
+                event_type='unexpected_error',
+                title='예상치 못한 시스템 오류',
+                date=check_date,
+                risk_level=RiskLevel.HIGH,
+                description=f"Unexpected error: {type(e).__name__}: {str(e)}",
+                impact_assessment='시스템 안정성 확인 필요'
             )]
     
     def get_filter_decision(self, symbol: str, 
@@ -270,8 +375,11 @@ class FundamentalEventFilter:
                         )
                     ))
             
+        except DataSourceError:
+            raise  # Re-raise data source errors to be handled at higher level
         except Exception as e:
             logger.warning(f"Error checking earnings schedule for {symbol}: {e}")
+            raise DataSourceError(f"Failed to fetch earnings data: {e}") from e
             
         return events
     
@@ -302,8 +410,13 @@ class FundamentalEventFilter:
                         blackout_end=disclosure_date + timedelta(days=blackout['after'])
                     ))
                     
+        except DataSourceError:
+            raise  # Re-raise data source errors
+        except DataParsingError:
+            raise  # Re-raise parsing errors
         except Exception as e:
             logger.warning(f"Error checking disclosures for {symbol}: {e}")
+            raise DataSourceError(f"Failed to fetch disclosure data: {e}") from e
             
         return events
     
@@ -358,8 +471,14 @@ class FundamentalEventFilter:
                 'events': events
             }
             
+        except RateLimitError:
+            raise  # Re-raise rate limit errors
+        except DataSourceError:
+            raise  # Re-raise data source errors
         except Exception as e:
             logger.warning(f"Error analyzing news sentiment for {symbol}: {e}")
+            # News sentiment is not critical, so don't raise error
+            pass
             
         return events
     
@@ -389,8 +508,12 @@ class FundamentalEventFilter:
                         impact_assessment='배당락 가격 조정 예상'
                     ))
                     
+        except DataSourceError:
+            raise  # Re-raise data source errors
         except Exception as e:
             logger.warning(f"Error checking dividend schedule for {symbol}: {e}")
+            # Dividend data is not critical, continue
+            pass
             
         return events
     
@@ -417,8 +540,12 @@ class FundamentalEventFilter:
             
             # 기타 기업 행동 (분할, 합병 등)은 공시에서 이미 감지됨
             
+        except DataSourceError:
+            raise  # Re-raise data source errors
         except Exception as e:
             logger.warning(f"Error checking other events for {symbol}: {e}")
+            # Other events are not critical, continue
+            pass
             
         return events
     

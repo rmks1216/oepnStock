@@ -16,7 +16,34 @@ from typing import Dict, List, Optional, Any
 import traceback
 from contextlib import asynccontextmanager
 
-from .models import *
+from .models import (
+    # Authentication models
+    LoginRequest, LoginResponse, RefreshTokenRequest, User, UserRole,
+    
+    # Dashboard models
+    DashboardOverview, Position, Trade, Alert, PerformanceSummary,
+    
+    # Trading control models
+    TradingControlRequest, TradingControlResponse,
+    
+    # Chart models
+    ChartDataRequest, ChartData,
+    
+    # WebSocket models
+    WebSocketMessage, LiveUpdate,
+    
+    # API response models
+    APIResponse, ErrorResponse, PaginationParams, PaginatedResponse,
+    
+    # Filter models
+    TradeFilter, AlertFilter,
+    
+    # Statistics models
+    TradingStatistics, RiskMetrics,
+    
+    # System models
+    SystemStatus, HealthCheck
+)
 from .auth import auth_manager, jwt_auth, admin_required, user_required, viewer_allowed
 from ..dashboard.data_manager import DashboardDataManager
 

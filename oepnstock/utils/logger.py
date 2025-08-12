@@ -78,6 +78,9 @@ def get_logger(name: str) -> structlog.BoundLogger:
     Returns:
         Configured structlog logger
     """
+    if not _logging_initialized:
+        initialize_logging()
+    
     return structlog.get_logger(name)
 
 
@@ -185,14 +188,40 @@ class TradingLogger:
         )
 
 
-# Initialize logging on import
-setup_logging(
-    log_level=config.log_level,
-    log_file=config.log_file
-)
+# Logging initialization state
+_logging_initialized = False
+
+
+def initialize_logging(log_level: Optional[str] = None, log_file: Optional[str] = None) -> None:
+    """
+    Initialize logging system explicitly
+    
+    Args:
+        log_level: Logging level (defaults to config.log_level)
+        log_file: Log file path (defaults to config.log_file)
+    """
+    global _logging_initialized
+    
+    if _logging_initialized:
+        return
+    
+    setup_logging(
+        log_level=log_level or config.log_level,
+        log_file=log_file or config.log_file
+    )
+    
+    _logging_initialized = True
+
+
+def is_logging_initialized() -> bool:
+    """Check if logging has been initialized"""
+    return _logging_initialized
 
 
 # Convenience function for getting trading logger
 def get_trading_logger(name: str) -> TradingLogger:
     """Get a specialized trading logger instance"""
+    if not _logging_initialized:
+        initialize_logging()
+    
     return TradingLogger(name)
