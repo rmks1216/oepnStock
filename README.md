@@ -1,301 +1,419 @@
-# oepnStock - Korean Stock Trading System
+# 🚀 oepnStock - 종합 자동매매 플랫폼
 
-한국 주식 시장을 위한 고도화된 4단계 매매 전략 시스템
+**한국 주식 시장을 위한 완전한 Full-Stack 자동매매 생태계**
 
-## 🎯 프로젝트 개요
+## 🌟 시스템 개요
 
-oepnStock은 한국 주식 시장의 특성을 반영한 체계적인 매매 시스템입니다. 4단계 체크리스트 기반의 전략과 3단계(Phase 1-3) 보완 모듈을 통해 안정적이고 체계적인 투자를 지원합니다.
+oepnStock은 4단계 체크리스트 기반 트레이딩 엔진을 중심으로 한 **종합적인 자동매매 플랫폼**입니다. 실시간 알림, 웹 대시보드, 모바일 API, 고급 백테스트까지 포함한 프로덕션 레디 시스템입니다.
 
-### 핵심 특징
+### ✨ 핵심 시스템
 
-- **4단계 체크리스트 전략**: 시장흐름파악 → 지지선감지 → 신호확인 → 리스크관리
-- **한국 시장 특화**: KOSPI/KOSDAQ, 거래시간, 호가단위, 섹터 분류 등 반영
-- **리스크 관리 중심**: 포트폴리오 집중도, 펀더멘털 필터, 갭 대응 전략
-- **확장 가능한 구조**: Phase 1(필수) → Phase 2(성능향상) → Phase 3(고도화) 단계별 구현
+- **🎯 4단계 트레이딩 엔진**: 시장분석 → 지지선탐지 → 신호확인 → 리스크관리
+- **📱 실시간 알림 시스템**: 텔레그램/이메일 멀티채널 알림 with HTML 템플릿
+- **🌐 웹 대시보드**: Flask + Socket.IO 실시간 모니터링 & 제어
+- **📱 모바일 API**: FastAPI + WebSocket + JWT 인증 완전 지원
+- **🧪 고급 백테스트**: Walk-Forward, 몬테카를로, 다중시나리오 분석
+- **🛡️ 엔터프라이즈 보안**: JWT 인증, 역할기반 접근제어, 입력검증
 
-## 📁 프로젝트 구조
+## 📁 시스템 아키텍처
 
 ```
 oepnStock/
-├── oepnstock/                    # 메인 패키지
-│   ├── core/                     # 4단계 핵심 전략
-│   │   ├── stage1_market_flow/   # 1단계: 시장 흐름 분석
-│   │   ├── stage2_support_detection/  # 2단계: 지지선 감지
-│   │   ├── stage3_signal_confirmation/  # 3단계: 신호 확인
-│   │   └── stage4_risk_management/  # 4단계: 리스크 관리
-│   ├── modules/                  # 보완 모듈
-│   │   └── critical/            # Phase 1 필수 모듈
-│   │       ├── fundamental_event_filter.py
-│   │       ├── portfolio_concentration_manager.py
-│   │       └── gap_trading_strategy.py
-│   ├── utils/                   # 유틸리티
-│   │   ├── korean_market.py     # 한국 시장 특화 기능
-│   │   ├── technical_analysis.py  # 기술적 분석
-│   │   └── market_data.py       # 시장 데이터 관리
-│   └── config/                  # 설정 관리
-├── examples/                    # 사용 예제
-├── tests/                       # 테스트 코드
-└── docs/                        # 문서
+├── 🎯 핵심 트레이딩 엔진
+│   ├── core/stage1_market_flow/     # 시장 흐름 분석
+│   ├── core/stage2_support_detection/  # 지지선 감지
+│   ├── core/stage3_signal_confirmation/  # 신호 확인
+│   └── core/stage4_risk_management/     # 리스크 관리
+├── 📱 알림 시스템
+│   ├── notification/telegram_notifier.py    # 텔레그램 봇
+│   ├── notification/email_notifier.py       # HTML 이메일
+│   └── notification/alert_manager.py        # 통합 알림 관리
+├── 🌐 웹 플랫폼
+│   ├── dashboard/web_dashboard.py           # Flask 서버
+│   ├── dashboard/data_manager.py            # 데이터 관리
+│   └── dashboard/templates/dashboard.html   # 반응형 UI
+├── 📱 모바일 API
+│   ├── mobile/api_server.py                # FastAPI 서버
+│   ├── mobile/auth.py                      # JWT 인증
+│   └── mobile/models.py                    # API 모델
+├── 🧪 백테스트 엔진
+│   ├── backtest/advanced_backtester.py     # 다중시나리오
+│   ├── backtest/walk_forward_analyzer.py   # 시계열 검증
+│   ├── backtest/monte_carlo_simulator.py   # 리스크 분석
+│   └── backtest/performance_metrics.py     # 고급 지표
+└── 📚 설정 & 예제
+    ├── config/alert_config.json            # 알림 규칙
+    ├── examples/                           # 실행 예제
+    └── SETUP_GUIDE.md                      # 종합 설정 가이드
 ```
 
-## 🚀 빠른 시작
+## 🚀 즉시 실행하기
 
-### 설치
-
+### 1️⃣ 환경 설정
 ```bash
-git clone https://github.com/your-repo/oepnStock.git
-cd oepnStock
-pip install -e .
+# 환경 변수 설정 (.env 파일)
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+EMAIL_ADDRESS=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
 ```
 
-### 기본 사용법
-
-```python
-from examples.basic_trading_example import BasicTradingSystem
-
-# 매매 시스템 초기화
-trading_system = BasicTradingSystem()
-
-# 단일 종목 분석
-result = trading_system.analyze_trading_opportunity('005930')  # 삼성전자
-print(f"추천: {result['recommendation']}")
-print(f"신뢰도: {result['confidence']:.1%}")
-
-# 여러 종목 스크리닝
-symbols = ['005930', '000660', '035420']
-screening_result = trading_system.run_screening(symbols)
-print(f"매수 후보: {len(screening_result['buy_candidates'])}개")
-```
-
-### 예제 실행
-
+### 2️⃣ 시스템 실행
 ```bash
-# 기본 매매 예제
-python examples/basic_trading_example.py
+# 🌐 웹 대시보드 (localhost:5000)
+python examples/web_dashboard_example.py
 
-# 전략 비교 분석
-python examples/strategy_comparison.py
+# 📱 모바일 API 서버 (localhost:8000)
+python examples/mobile_api_example.py
 
-# 백테스팅 예제
-python examples/backtesting_example.py
+# 📱 알림 시스템 테스트
+python examples/notification_system_example.py
 
-# 통합 테스트
-python tests/test_integration.py
+# 🧪 고급 백테스트 실행
+python examples/advanced_backtest_example.py
 ```
 
-## 🔍 4단계 매매 전략
+### 3️⃣ API 사용 예제
+```bash
+# 로그인 (demo/demo123!)
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"demo","password":"demo123!"}'
 
-### Stage 1: 시장 흐름 분석 (Market Flow)
-- **목적**: 거래 가능한 시장 환경인지 판단
-- **지표**: 지수 위치(40점) + MA 기울기(30점) + 변동성(30점)
-- **임계점**: 70점 이상에서 매매 허용
+# 대시보드 조회 (토큰 필요)
+curl -X GET http://localhost:8000/api/v1/dashboard/overview \
+  -H 'Authorization: Bearer <TOKEN>'
 
-### Stage 2: 지지선 감지 (Support Detection)  
-- **목적**: 안전한 매수 구간 식별
-- **방법**: 과거 지지선 + 이동평균 + 거래량 분석
-- **강화**: 겹치는 지지선(클러스터링) 우대
-
-### Stage 3: 신호 확인 (Signal Confirmation)
-- **목적**: 매수 타이밍의 적절성 검증  
-- **지표**: RSI, MACD, 스토캐스틱, 볼린저밴드, 캔들패턴, 거래량
-- **적응**: 시장 상황별 가중치 동적 조정
-
-### Stage 4: 리스크 관리 (Risk Management)
-- **목적**: 손실 제한 및 수익 최적화
-- **방법**: 2% 규칙 → Kelly 공식 전환
-- **계획**: 포지션 크기, 손절/목표가, 시나리오별 대응
-
-## 🛡️ Phase 1 필수 보완 모듈
-
-### Fundamental Event Filter
-- **실적발표 블랙아웃**: D-3 ~ D+1 매매 금지
-- **중요공시 모니터링**: 유상증자, 합병 등 위험 이벤트 차단
-- **뉴스 감성 분석**: 부정적 뉴스 감지 시 포지션 조정
-
-### Portfolio Concentration Manager  
-- **포지션 수 제한**: 최대 5개 종목
-- **단일 종목 비중**: 20% 한도
-- **섹터 집중도**: 40% 한도  
-- **상관관계 리스크**: 상관계수 0.7+ 종목군 60% 제한
-
-### Gap Trading Strategy
-- **갭 분석**: 상승/하락 갭 유형별 분류
-- **대응 전략**: 되돌림 대기 vs 모멘텀 추종 vs 전면 재계산
-- **리스크 조정**: 갭 크기별 포지션 조정
-
-## 📊 사용 예제
-
-### 기본 분석
-
-```python
-# 종목 분석
-result = trading_system.analyze_trading_opportunity('005930')
-
-# 결과 해석
-if result['recommendation'] == 'BUY':
-    print(f"💰 매수 추천: {result['entry_price']:,}원")
-    print(f"📊 투자금액: {result['investment_amount']:,}원") 
-    print(f"🛑 손절가: {result['stop_loss']:,}원")
-    print(f"🎯 목표가: {result['target_prices']}")
+# 거래 제어
+curl -X POST http://localhost:8000/api/v1/trading/control \
+  -H 'Authorization: Bearer <TOKEN>' \
+  -d '{"action":"pause","duration_hours":1}'
 ```
 
-### 리스크 체크
+## 🎯 4-Phase 트레이딩 시스템
 
+### Phase 1: 알림 시스템 📱
+**완전 비동기 멀티채널 알림**
+- **텔레그램**: 실시간 거래/리스크 알림 with 메시지 큐
+- **이메일**: HTML 템플릿 + 차트 첨부 자동 리포트
+- **통합 관리**: JSON 규칙 엔진 + 쿨다운 제어
+
+### Phase 2: 고급 백테스트 🧪
+**다중 시나리오 & 시계열 검증**
+- **4개 시장 환경**: 강세/약세/횡보/고변동성 자동 분석
+- **Walk-Forward**: 252일 훈련 → 63일 테스트 롤링 검증
+- **몬테카를로**: 1000회 시뮬레이션 리스크 분석
+- **15개 고급 지표**: Sharpe, Sortino, Calmar, VaR, CVaR
+
+### Phase 3: 웹 대시보드 🌐
+**실시간 모니터링 & 제어**
+- **Flask + Socket.IO**: 5초마다 라이브 데이터 스트리밍
+- **인터랙티브 차트**: Plotly.js 자산곡선/수익률/드로다운
+- **반응형 UI**: TailwindCSS 모바일 최적화
+- **원격 제어**: 실시간 거래 일시정지/재개
+
+### Phase 4: 모바일 API 📱
+**FastAPI + WebSocket + JWT 보안**
+- **15개 REST 엔드포인트**: 대시보드/포지션/거래/알림/제어
+- **실시간 WebSocket**: 양방향 통신 + 자동 재연결
+- **JWT 인증**: Access/Refresh 토큰 + 역할기반 접근제어
+- **자동 문서화**: Swagger UI + ReDoc
+
+## 💡 주요 기술적 성취
+
+### 🚀 완전한 비동기 아키텍처
+- **알림 시스템**: asyncio 논블로킹 + 메시지 큐
+- **웹 대시보드**: Socket.IO 실시간 양방향 통신
+- **API 서버**: FastAPI async/await 고성능
+- **백테스트**: concurrent.futures 병렬 처리
+
+### 🔒 엔터프라이즈급 보안
+- **JWT 인증**: Access/Refresh 토큰 자동 갱신
+- **역할 기반 접근**: Admin/User/Viewer 권한 분리
+- **입력 검증**: Pydantic 완전한 타입 안전성
+- **세션 관리**: 만료 세션 자동 정리
+
+### 🏗️ 확장 가능한 설계
+- **모듈화**: 각 시스템 완전 독립 실행 가능
+- **설정 기반**: JSON/YAML 파일로 유연한 구성
+- **플러그인 구조**: 새로운 알림 채널 쉬운 추가
+- **마이크로서비스**: API 서버와 대시보드 분리
+
+### 📊 실시간 모든 것
+- **5초 업데이트**: 모든 데이터 실시간 스트리밍
+- **즉각적 피드백**: 사용자 액션에 즉시 반응
+- **라이브 차트**: 자산곡선/수익률 실시간 업데이트
+- **푸시 알림**: 중요 이벤트 즉시 전송
+
+## 🎛️ 시스템 사용 예제
+
+### 📱 알림 시스템 통합 예제
 ```python
-# 펀더멘털 이벤트 체크
-filter_decision = fundamental_filter.get_filter_decision('005930')
-if not filter_decision.can_buy:
-    print(f"❌ 매매 차단: {filter_decision.reason}")
+from oepnstock.notification import AlertManager
 
-# 포트폴리오 집중도 체크  
-concentration_check = portfolio_manager.can_add_position(
-    '005930', 1500000, current_portfolio
+# 통합 알림 매니저 초기화
+alert_manager = AlertManager()
+
+# 거래 성공 알림
+await alert_manager.send_trade_alert(
+    symbol="005930", action="BUY", 
+    price=65000, quantity=10, profit_pct=2.5
 )
-if not concentration_check.can_add:
-    print(f"⚠️  집중도 제한: {concentration_check.blocking_reasons}")
+
+# 리스크 경고 알림
+await alert_manager.send_risk_alert(
+    alert_type="position_limit", 
+    message="포지션 한도 90% 도달", 
+    severity="high"
+)
+
+# 일일 리포트 자동 발송
+await alert_manager.send_daily_report()
 ```
 
-### 갭 대응
-
+### 🌐 웹 대시보드 실시간 제어
 ```python
-# 갭 분석
-gap_analysis = gap_strategy.analyze_gap('005930', 50000, 52000)  # 4% 갭업
-print(f"갭 유형: {gap_analysis.gap_type}")
-print(f"채우기 확률: {gap_analysis.fill_probability:.1%}")
+from oepnstock.dashboard import WebDashboard
 
-# 전략 결정
-strategy = gap_strategy.determine_gap_strategy(gap_analysis)
-print(f"권장 전략: {strategy.strategy_type}")
+# 대시보드 서버 초기화
+dashboard = WebDashboard(data_manager, host='0.0.0.0', port=5000)
+
+# 실시간 데이터 브로드캐스트
+@dashboard.socketio.on('request_update')
+def handle_update_request():
+    live_data = dashboard.data_manager.get_live_data()
+    dashboard.socketio.emit('live_update', live_data)
+
+# 거래 제어 핸들러
+@dashboard.socketio.on('trading_control')
+def handle_trading_control(data):
+    action = data['action']  # 'pause' or 'resume'
+    result = dashboard.data_manager.control_trading(action)
+    dashboard.socketio.emit('control_response', result)
 ```
 
-## 🧪 테스트 및 검증
-
-### 통합 테스트 실행
-
-```bash
-python tests/test_integration.py
-```
-
-### 백테스팅 검증
-
-```bash
-python examples/backtesting_example.py
-```
-
-### 전략 성능 비교
-
-```bash
-python examples/strategy_comparison.py
-```
-
-## ⚙️ 설정 및 커스터마이징
-
-### 기본 설정 수정
-
+### 📱 모바일 API 인증 & 사용
 ```python
-from oepnstock.config import config
+import requests
 
-# 리스크 설정 조정
-config.trading.max_positions = 3  # 최대 포지션 수
-config.trading.max_single_position_ratio = 0.15  # 단일 종목 비중 15%
-config.trading.stop_loss_ratio = 0.03  # 손절 비율 3%
+# 1. 로그인 토큰 획득
+login_response = requests.post(
+    "http://localhost:8000/api/v1/auth/login",
+    json={"username": "demo", "password": "demo123!"}
+)
+token = login_response.json()["access_token"]
+
+# 2. 인증 헤더 설정
+headers = {"Authorization": f"Bearer {token}"}
+
+# 3. 실시간 대시보드 조회
+dashboard_data = requests.get(
+    "http://localhost:8000/api/v1/dashboard/overview", 
+    headers=headers
+).json()
+
+# 4. 거래 제어 요청
+control_response = requests.post(
+    "http://localhost:8000/api/v1/trading/control",
+    headers=headers,
+    json={"action": "pause", "duration_hours": 2}
+)
 ```
 
-### 사용자 정의 전략 추가
+## 🧪 고급 백테스트 활용
 
+### 다중 시나리오 백테스트
 ```python
-class CustomStrategy:
-    def analyze(self, symbol: str) -> Dict[str, Any]:
-        # 사용자 정의 분석 로직
-        return {
-            'symbol': symbol,
-            'recommendation': 'BUY',
-            'confidence': 0.8
-        }
+from oepnstock.backtest import AdvancedBacktester
+
+# 여러 투자금액으로 성과 비교
+backtester = AdvancedBacktester()
+results = backtester.run_comprehensive_backtest(
+    strategy=YourStrategy(),
+    capital_levels=[1_000_000, 3_000_000, 5_000_000, 10_000_000]
+)
+
+# 시장 상황별 가중 결과
+weighted_result = backtester.calculate_weighted_performance(results)
+print(f"종합 샤프 비율: {weighted_result.sharpe_ratio:.2f}")
+print(f"최대 드로다운: {weighted_result.max_drawdown:.2%}")
 ```
 
-## 🔮 로드맵
+### Walk-Forward 시계열 검증
+```python
+from oepnstock.backtest import WalkForwardAnalyzer
 
-### Phase 2: 성능 향상 모듈 (예정)
-- **변동성 적응 시스템**: 시장 변동성별 전략 조정
-- **호가창 분석**: 실시간 매수/매도 압력 분석  
-- **상관관계 리스크 관리**: 종목 간 상관관계 모니터링
+analyzer = WalkForwardAnalyzer()
+wf_results = analyzer.run_walk_forward_analysis(
+    strategy=YourStrategy(),
+    window_size=252,  # 1년 훈련
+    step_size=63      # 3개월 테스트
+)
 
-### Phase 3: 고도화 모듈 (예정)
-- **ML 신호 검증**: 머신러닝 기반 신호 품질 평가
-- **장중 시간대별 전략**: 시간대별 차별화 전략
-- **대량거래 감지**: 기관/외국인 거래 패턴 분석
+# 시간대별 성과 분석
+for period_result in wf_results.period_results:
+    print(f"{period_result.period}: 수익률 {period_result.return_pct:.2%}")
+```
 
-### API 통합 계획
-- **실시간 데이터**: KIS API, LS증권 API 연동
-- **뉴스/공시**: 네이버금융, 다트 API 연동  
-- **백테스팅 확장**: QuantConnect, Zipline 통합
+### 몬테카를로 리스크 분석
+```python
+from oepnstock.backtest import MonteCarloSimulator
 
-## 📚 문서 및 가이드
+simulator = MonteCarloSimulator()
+mc_results = simulator.run_simulation(
+    strategy=YourStrategy(), 
+    n_simulations=1000
+)
 
-### 📋 전략 문서 시스템
-- **[전략 가이드](docs/STRATEGY_GUIDE.md)**: 백테스팅 전략 종합 가이드
-- **[전략 검증](docs/STRATEGY_VALIDATION.md)**: 전략 검증 및 비교 방법론
-- **개별 전략 문서**: `docs/strategies/` 디렉토리
-  - [기본 전략](docs/strategies/DEFAULT_STRATEGY.md)
-  - [적극적 전략](docs/strategies/AGGRESSIVE_STRATEGY.md)  
-  - [보수적 전략](docs/strategies/CONSERVATIVE_STRATEGY.md)
-  - [스켈핑 전략](docs/strategies/SCALPING_STRATEGY.md)
-  - [스윙 전략](docs/strategies/SWING_STRATEGY.md)
+print(f"95% 신뢰구간 VaR: {mc_results.var_95:.2%}")
+print(f"CVaR (조건부 VaR): {mc_results.cvar_95:.2%}")
+print(f"꼬리 위험 비율: {mc_results.tail_ratio:.2f}")
+```
 
-### 🎯 백테스팅 프로파일 관리
+## ⚙️ 고급 설정 & 커스터마이징
+
+### 알림 규칙 커스터마이징
+```json
+// config/alert_config.json
+{
+  "risk_alerts": {
+    "drawdown_threshold": 0.05,
+    "position_limit_threshold": 0.9,
+    "volatility_spike_threshold": 2.0
+  },
+  "notification_settings": {
+    "telegram_enabled": true,
+    "email_enabled": true,
+    "cooldown_minutes": 30
+  }
+}
+```
+
+### 대시보드 설정 커스터마이징
+```python
+from oepnstock.dashboard import WebDashboard
+
+dashboard = WebDashboard(
+    data_manager=data_manager,
+    host='0.0.0.0',
+    port=5000,
+    update_interval=5,  # 5초마다 업데이트
+    chart_history_days=30,  # 30일 차트 히스토리
+    enable_remote_control=True  # 원격 제어 활성화
+)
+```
+
+### API 보안 설정 강화
+```python
+# mobile/auth.py 커스터마이징
+JWT_SETTINGS = {
+    "secret_key": "your_super_secure_key",
+    "access_token_expire_minutes": 30,
+    "refresh_token_expire_days": 7,
+    "algorithm": "HS256"
+}
+
+# IP 화이트리스트 설정
+ALLOWED_IPS = ["192.168.1.0/24", "10.0.0.0/8"]
+```
+
+## 🔮 Next Phase 로드맵
+
+### Phase 5: 실제 브로커 연동 🏦
+- **키움증권 OpenAPI**: 실제 주문/체결 시스템 구축
+- **실시간 데이터**: 호가/체결 데이터 스트리밍
+- **주문 관리**: 지정가/시장가 주문 완전 지원
+- **계좌 동기화**: 실제 잔고와 시스템 실시간 동기화
+
+### Phase 6: AI 기능 강화 🤖
+- **GPT 기반 분석**: 뉴스/공시 자동 해석 및 투자 의견
+- **강화학습 최적화**: 매개변수 자동 튜닝 시스템
+- **패턴 인식**: 차트 패턴 자동 감지 및 분류
+- **감정 분석**: 시장 심리 지표 실시간 모니터링
+
+### Phase 7: 확장 생태계 🌐
+- **모바일 앱**: React Native 네이티브 앱 개발
+- **클라우드 배포**: AWS/Azure 완전 관리형 서비스
+- **멀티 브로커**: 여러 증권사 통합 지원
+- **커뮤니티**: 전략 공유 및 백테스트 경쟁 플랫폼
+
+## 📚 문서 & 설정 가이드
+
+### 🛠️ 핵심 설정 문서
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)**: 완전한 시스템 설정 가이드
+- **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)**: 현재 구현 상태 및 히스토리
+- **[CLAUDE.md](CLAUDE.md)**: 프로젝트 아키텍처 및 개발 가이드
+
+### 📊 실행 예제 모음
 ```bash
-# YAML 설정 파일
-config/backtest_profiles.yaml
+# 🌐 웹 대시보드 (http://localhost:5000)
+python examples/web_dashboard_example.py
 
-# 자동 문서 동기화
-python utils/strategy_docs_sync.py
+# 📱 모바일 API 서버 (http://localhost:8000/docs)
+python examples/mobile_api_example.py
 
-# 다중 전략 비교 실행
-python examples/backtest_with_profiles.py
+# 📱 알림 시스템 통합 테스트
+python examples/notification_system_example.py
+
+# 🧪 고급 백테스트 (4시나리오 + Walk-Forward + Monte Carlo)
+python examples/advanced_backtest_example.py
 ```
 
-### 📊 전략 비교 실행
-| 전략 | 리밸런싱 | MA조합 | RSI | 최대포지션 | 시장기준점 |
-|---|---|---|---|---|---|
-| `default` | 5일 | MA(5,20) | 14일 | 5개 | 70점 |
-| `aggressive` | 3일 | MA(3,15) | 10일 | 7개 | 65점 |
-| `conservative` | 7일 | MA(10,30) | 21일 | 3개 | 75점 |
-| `scalping` | 1일 | MA(2,8) | 7일 | 10개 | 60점 |
-| `swing` | 10일 | MA(20,60) | 30일 | 3개 | 80점 |
+### 🔧 설정 파일 구조
+```
+config/
+├── alert_config.json          # 알림 규칙 설정
+├── .env                       # 환경 변수 (토큰, 비밀번호)
+└── settings.py                # 시스템 전역 설정
 
-### 🔄 문서 업데이트 워크플로우
-1. **YAML 수정** → `config/backtest_profiles.yaml`
-2. **자동 동기화** → `python utils/strategy_docs_sync.py`
-3. **검증 실행** → `python examples/backtest_with_profiles.py`
-4. **문서 확인** → `docs/strategies/*.md` 업데이트 확인
+data/
+├── oepnstock.db              # SQLite 데이터베이스
+└── backtest_cache/           # 백테스트 결과 캐시
 
-### 📖 기존 문서
-- [GUIDE.md](GUIDE.md): 상세한 전략 가이드 (한국어)
-- [MODULE_GUIDE.md](MODULE_GUIDE.md): 모듈별 상세 설명 (한국어)  
-- [CLAUDE.md](CLAUDE.md): 개발자를 위한 아키텍처 가이드
+logs/
+├── oepnstock.log             # 시스템 로그
+├── trading.log               # 거래 로그
+└── notifications.log         # 알림 로그
+```
+
+### 🔗 API 문서 링크
+- **Swagger UI**: http://localhost:8000/docs (API 서버 실행 시)
+- **ReDoc**: http://localhost:8000/redoc (자동 생성 API 문서)
+- **WebSocket**: ws://localhost:8000/ws (실시간 통신)
+
+## 🎯 핵심 성과 요약
+
+### ✅ 완료된 구현 사항
+- **📱 실시간 알림 시스템**: 텔레그램/이메일 멀티채널 with HTML 템플릿
+- **🌐 웹 대시보드**: Flask + Socket.IO 실시간 모니터링 & 원격 제어
+- **📱 모바일 API**: FastAPI + JWT + WebSocket 완전한 모바일 지원
+- **🧪 고급 백테스트**: 4시나리오 + Walk-Forward + Monte Carlo 리스크 분석
+- **🛡️ 엔터프라이즈 보안**: JWT 인증, 역할기반 접근제어, 완전한 입력검증
+- **⚡ 완전한 비동기**: asyncio + 병렬처리로 고성능 실시간 시스템
+
+### 🚀 즉시 사용 가능
+```bash
+# 1. 웹 대시보드 실행
+python examples/web_dashboard_example.py
+
+# 2. API 서버 실행 
+python examples/mobile_api_example.py
+
+# 3. 시스템 상태 확인
+curl http://localhost:8000/api/v1/system/status
+```
 
 ## ⚠️ 면책 조항
 
-이 시스템은 교육 및 연구 목적으로 제공됩니다. 실제 투자 시에는:
+이 시스템은 교육 및 연구 목적으로 제공됩니다. 실제 투자에는 항상 리스크가 따르므로:
 
-1. **충분한 백테스팅**: 다양한 시장 상황에서 검증 필요
-2. **리스크 관리**: 개인의 리스크 허용 범위 내에서만 사용
-3. **지속적 모니터링**: 시장 환경 변화에 따른 전략 조정
-4. **분산 투자**: 단일 전략에 의존하지 말고 분산 투자
-
-## 🤝 기여하기
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 라이센스
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. **충분한 검증**: 페이퍼 트레이딩으로 시스템 검증 필수
+2. **리스크 관리**: 개인 투자 가능 범위 내에서만 사용
+3. **지속적 모니터링**: 시장 환경 변화에 따른 조정 필요
+4. **분산 투자**: 단일 시스템에 의존하지 말고 포트폴리오 분산
 
 ---
 
-**oepnStock** - 체계적이고 안전한 한국 주식 투자를 위한 완전한 솔루션
+🎉 **oepnStock** - 한국 주식 시장을 위한 **완전한 종합 자동매매 플랫폼** 🎉
+
+*실시간 알림부터 모바일 API까지, 프로덕션 레디 Full-Stack 시스템*
