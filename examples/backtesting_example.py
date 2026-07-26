@@ -23,7 +23,7 @@ from oepnstock.modules.critical import (
     GapTradingStrategy
 )
 from oepnstock.utils import MarketDataManager, get_logger
-from oepnstock.utils.free_data_sources import get_data_provider
+from oepnstock.utils.krx_data_source import get_data_provider
 from oepnstock.config.settings import config
 
 logger = get_logger(__name__)
@@ -293,41 +293,20 @@ class SimpleBacktester:
             }
     
     def _get_real_price_data(self, symbol: str, end_date: date) -> pd.DataFrame:
-        """실제 가격 데이터 조회"""
+        """실제 가격 데이터 조회 (KRX)"""
+        start_date = end_date - timedelta(days=90)  # 이전 period="3mo"와 동일한 조회 범위
         try:
-            # 실제 데이터 조회
-            hist_data = self.data_provider.get_historical_data(symbol, period="3mo")
-            
+            hist_data = self.data_provider.get_historical_data(symbol, start_date, end_date)
+
             if hist_data is not None and not hist_data.empty:
-                # 종료일까지의 데이터만 사용 (timezone-aware comparison)
-                end_timestamp = pd.Timestamp(end_date).tz_localize(hist_data.index.tz)
-                hist_data = hist_data[hist_data.index <= end_timestamp]
-                return hist_data[['close']].rename(columns={'close': 'close'})
-            
+                hist_data = hist_data[hist_data.index <= pd.Timestamp(end_date)]
+                return hist_data[['close']]
+
         except Exception as e:
             logger.warning(f"Failed to get real data for {symbol}: {e}")
-        
-        # Fallback to mock data
-        return self._create_mock_price_data(symbol, end_date)
-    
-    def _create_mock_price_data(self, symbol: str, end_date: date) -> pd.DataFrame:
-        """Mock 가격 데이터 생성 (Fallback용)"""
-        start_date = end_date - timedelta(days=30)
-        dates = pd.date_range(start=start_date, end=end_date, freq='D')
-        
-        # 심볼별로 다른 시드로 재현 가능한 데이터 생성
-        np.random.seed(hash(symbol) % 2**32)
-        base_price = 50000 + hash(symbol) % 50000
-        
-        prices = [base_price]
-        for i in range(1, len(dates)):
-            change = np.random.normal(0.002, 0.02)
-            new_price = prices[-1] * (1 + change)
-            prices.append(max(new_price, base_price * 0.7))
-        
-        return pd.DataFrame({
-            'close': prices
-        }, index=dates)
+
+        # 조회 실패 시 빈 데이터프레임 반환 (Mock으로 대체하지 않음)
+        return pd.DataFrame(columns=['close'])
     
     def _execute_buy_order(self, portfolio: Dict, signal: Dict) -> Dict:
         """매수 주문 실행"""

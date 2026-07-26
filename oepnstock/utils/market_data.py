@@ -15,6 +15,7 @@ import time
 from ..config import config
 from .logger import get_logger
 from .korean_market import KoreanMarketUtils
+from .krx_data_source import get_data_provider
 
 logger = get_logger(__name__)
 
@@ -57,10 +58,9 @@ class MarketDataManager:
         
         # Data source priorities (실제 API 연동시 사용)
         self.data_sources = [
-            'korea_investment',  # Primary
-            'kiwoom',           # Secondary  
-            'yahoo_finance',    # Fallback
-            'mock'              # Development/testing
+            'krx',               # Primary — KRX 공식 데이터 (pykrx)
+            'korea_investment',  # Secondary (미구현)
+            'kiwoom',            # (미구현)
         ]
         
         # Real-time data subscriptions
@@ -83,32 +83,30 @@ class MarketDataManager:
         Returns:
             DataFrame with OHLCV data
         """
+        if end_date is None:
+            end_date = date.today()
+        if start_date is None:
+            start_date = end_date - timedelta(days=100)
+
         cache_key = f"{symbol}_{start_date}_{end_date}_{interval}"
-        
+
         # Check cache first
         if self._is_cache_valid(cache_key):
             logger.debug(f"Returning cached data for {symbol}")
             return self.cache[cache_key]
-        
-        try:
-            # Try data sources in priority order
-            for source in self.data_sources:
-                try:
-                    data = self._fetch_from_source(source, symbol, start_date, end_date, interval)
-                    if data is not None and not data.empty:
-                        self._update_cache(cache_key, data)
-                        return data
-                except Exception as e:
-                    logger.warning(f"Failed to fetch from {source}: {e}")
-                    continue
-            
-            # All sources failed - return mock data for development
-            logger.warning(f"All data sources failed for {symbol}, returning mock data")
-            return self._generate_mock_data(symbol, start_date, end_date)
-            
-        except Exception as e:
-            logger.error(f"Error fetching data for {symbol}: {e}")
-            raise
+
+        # Try data sources in priority order
+        for source in self.data_sources:
+            try:
+                data = self._fetch_from_source(source, symbol, start_date, end_date, interval)
+                if data is not None and not data.empty:
+                    self._update_cache(cache_key, data)
+                    return data
+            except Exception as e:
+                logger.warning(f"Failed to fetch from {source}: {e}")
+                continue
+
+        raise RuntimeError(f"모든 데이터 소스에서 {symbol} 조회에 실패했습니다.")
     
     def get_market_snapshot(self) -> MarketSnapshot:
         """Get current market snapshot"""
@@ -394,9 +392,12 @@ class MarketDataManager:
                           start_date: Optional[date], end_date: Optional[date],
                           interval: str) -> Optional[pd.DataFrame]:
         """Fetch data from specific source"""
-        if source == 'mock':
-            return self._generate_mock_data(symbol, start_date, end_date)
-        
+        if source == 'krx':
+            provider = get_data_provider()
+            if symbol in ('KOSPI', 'KOSDAQ'):
+                return provider.get_index_data(symbol, start_date, end_date)
+            return provider.get_historical_data(symbol, start_date, end_date)
+
         # Real API implementations would go here
         elif source == 'korea_investment':
             # Korea Investment Securities API

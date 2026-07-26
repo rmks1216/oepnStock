@@ -5,13 +5,13 @@ Quick Paper Trading Test
 
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from oepnstock.utils.free_data_sources import get_data_provider
+from oepnstock.utils.krx_data_source import get_data_provider
 from oepnstock.utils import get_logger
 
 logger = get_logger(__name__)
@@ -38,19 +38,22 @@ class QuickPaperTest:
         
         logger.info("Quick Paper Trading Test initialized")
     
+    def _get_recent_data(self, symbol: str, days: int = 60):
+        """최근 N일 KRX 일봉 데이터 조회 (현재가는 최근 종가로 근사)"""
+        end_date = datetime.now().date()
+        start_date = end_date - timedelta(days=days)
+        return self.data_provider.get_historical_data(symbol, start_date, end_date)
+
     def analyze_opportunity(self, symbol: str) -> dict:
         """간단한 매매 기회 분석"""
         try:
-            # 현재가 조회
-            current_price = self.data_provider.get_current_price(symbol)
-            if not current_price:
-                return {'signal': 'NO_DATA', 'reason': 'Price data unavailable'}
-            
-            # 과거 데이터로 간단한 기술분석
-            hist_data = self.data_provider.get_historical_data(symbol, '1mo')
+            # 과거 데이터로 간단한 기술분석 (현재가는 최근 종가로 근사)
+            hist_data = self._get_recent_data(symbol)
             if hist_data is None or hist_data.empty:
                 return {'signal': 'NO_DATA', 'reason': 'Historical data unavailable'}
-            
+
+            current_price = float(hist_data['close'].iloc[-1])
+
             # 단순 이동평균 계산
             hist_data['ma5'] = hist_data['close'].rolling(5).mean()
             hist_data['ma20'] = hist_data['close'].rolling(20).mean()
@@ -156,7 +159,8 @@ class QuickPaperTest:
         
         total_position_value = 0
         for pos in self.portfolio['positions']:
-            current_price = self.data_provider.get_current_price(pos['symbol'])
+            recent = self._get_recent_data(pos['symbol'], days=10)
+            current_price = float(recent['close'].iloc[-1]) if recent is not None and not recent.empty else None
             if current_price:
                 current_value = pos['shares'] * current_price
                 pnl = current_value - pos['cost']
