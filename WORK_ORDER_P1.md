@@ -45,11 +45,44 @@
 
 ### 남은 작업
 
-- [ ] **T1.** KRX 가입 + `.env` 설정
-- [ ] **T2.** 기존 mock 경로 교체
+- [x] **T1.** KRX 가입 + `.env` 설정 — 로컬 Mac에서 완료(사용자 보고). `ID: True` 출력은 아직 확인 안 됨, T3 실행 시 함께 확인
+- [x] **T2.** 기존 mock 경로 교체 — 커밋 `fa32de1`. grep 결과 `free_data_sources` import 없음
 - [ ] **T3.** `check_data.py` 통과
-- [ ] **T4.** `verify.py` 실행 → 첫 실측치 확보
+- [ ] **T4.** `verify.py` 실행 → 첫 실측치 확보 (판정 기준은 T4 항목에 기록됨)
 - [ ] **T5.** 문서 미검증 수치 정리
+
+### 현재 상태와 다음 세션 메모 (2026-11-22)
+
+**작업 위치**: 브랜치 `claude/t2-mock-path-replacement-7wrbe3`. T3부터는 **로컬 Mac**에서 진행한다.
+클라우드 세션 컨테이너에는 `.env`가 없어 KRX 조회를 할 수 없다. 자격증명을 채팅에 붙여 넣지 않는다.
+
+**T2 이후 추가로 반영한 것**
+
+| 커밋 | 내용 |
+|---|---|
+| `90800e4` | T4 판정 기준 기록 (아래 T4 항목) |
+| `65d5a39` | `verify.py`: 과거 종목 리스트 조회 실패 시 오늘 대형주로 대체하지 않고 중단 |
+| `e1bb143` | `.env.example`에 `KRX_ID` / `KRX_PW` 항목 추가 |
+| `24b68cb` | `check_data.py` / `verify.py`에 `load_dotenv()` 추가 (pykrx import보다 먼저 실행) |
+
+**T3 실행 전 확인**: `pip install python-dotenv` (requirements.txt에 있음).
+
+**T4 실행 전 반드시 할 것**: `examples/backtesting_example.py`의 `SimpleBacktester._update_portfolio_value`가
+보유 종목 가격을 아직 랜덤워크(`np.random.normal`)로 갱신한다. 실제 KRX 가격으로 고치기 전에는
+수익률·최대낙폭·샤프비율을 판정에 쓸 수 없다 (T4 판정 기준 전제조건 1).
+
+**의도적으로 남겨둔 mock** (T2 범위 밖, 고치려면 새 기능이 필요해 보류)
+
+- `oepnstock/backtest/advanced_backtester.py`의 `_generate_mock_data` — `verify.py` 경로에서는 쓰지 않음
+- `oepnstock/utils/market_data.py`의 `get_sector_data`, `get_market_snapshot`, `get_real_time_price` —
+  섹터지수·VIX·환율·실시간 호가는 `krx_data_source.py`가 제공하지 않음
+- 따라서 `examples/live_trading_example.py` 등 모의투자 예제는 아직 실데이터로 돌아가지 않는다
+
+**정해진 결정**
+
+- 데이터는 KRX 정보데이터시스템의 **무료** 통계만 쓴다. 유료 데이터는 구매하지 않는다.
+  T3가 무료 계정만으로 통과하면 이것이 확인된다.
+- `KIWOOM_API_KEY` 등 증권사 연결은 구현돼 있지 않고(빈 함수), T4 합격 전까지 진행하지 않는다.
 
 ---
 
