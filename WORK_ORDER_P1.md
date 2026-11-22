@@ -43,13 +43,13 @@
 - [x] `.gitignore` / `.env.example` 작성
 - [x] `docs/DATA_LAYER_MIGRATION.md` 작성
 
-### 남은 작업
+### 1순위 작업 (2026-11-22 완료)
 
-- [ ] **T1.** KRX 가입 + `.env` 설정
-- [ ] **T2.** 기존 mock 경로 교체
-- [ ] **T3.** `check_data.py` 통과
-- [ ] **T4.** `verify.py` 실행 → 첫 실측치 확보
-- [ ] **T5.** 문서 미검증 수치 정리
+- [x] **T1.** KRX 가입 + `.env` 설정
+- [x] **T2.** 기존 mock 경로 교체
+- [x] **T3.** `check_data.py` 통과
+- [x] **T4.** `verify.py` 실행 → 첫 실측치 확보
+- [x] **T5.** 문서 미검증 수치 정리
 
 ---
 
