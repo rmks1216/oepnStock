@@ -109,6 +109,7 @@ class BacktestSettings:
     signal_rsi_oversold: int = 30    # RSI 과매도
     signal_rsi_overbought: int = 70  # RSI 과매수
     min_recent_up_days: int = 2      # 최근 상승일 최소 기준
+    recent_up_window: int = 3        # 상승일을 셀 최근 일수 (min_recent_up_days 이상이어야 함)
     
     # Entry/Exit conditions
     ma_trend_factor: float = 1.0     # 이평선 상승 추세 기준 (MA5 > MA20)

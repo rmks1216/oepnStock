@@ -2,7 +2,7 @@
 
 **최종 업데이트**: 2026-11-22
 **현재 단계**: 데이터 검증 기반 구축(WORK_ORDER_P1.md 1순위) 완료
-**다음 단계**: 신호 로직 버그 수정 → Enhanced 모듈 파이프라인 연결(2순위)
+**다음 단계**: Enhanced 모듈 파이프라인 연결(2순위)
 
 > 아래 2025-08-12 기록의 성과 서술은 랜덤워크 데이터 시절에 쓴 것이다.
 > 수치는 `reports/verification_*.md` 에 있는 것만 인용한다.
@@ -27,9 +27,14 @@
 - 검증 백테스트: `reports/verification_20261122_1858.md`
   (2022-01-01~2023-12-31, 시작 시점 KOSPI 종목 코드순 20개)
 
+### 해결: swing 프로파일 거래 0회
+- 원인: 신호 코드가 최근 3일 상승일만 세는데 swing 설정 `min_recent_up_days` 가 4였다
+- 수정: 상승일을 셀 일수를 `recent_up_window` 설정으로 분리(기본 3, swing 5).
+  `SimpleBacktester` 가 성립 불가능한 조합이면 시작 시 ValueError 로 멈춘다
+- 결과: `reports/verification_20261122_1904.md` 에서 swing 거래 8회.
+  다른 세 프로파일 수치는 수정 전과 같다
+
 ### 발견한 문제 (미해결)
-- swing 프로파일 거래 0회: 신호 코드가 최근 3일 상승일만 세는데
-  swing 설정 `min_recent_up_days` 가 4라 매수 조건이 성립할 수 없다
 - `AdvancedBacktester._execute_strategy` 는 5%/3% 확률로 무작위 매매한다.
   실데이터를 넣어도 전략 검증 결과가 아니다
 - `MarketDataManager` 의 시장 스냅샷·섹터·실시간 시세는 여전히 Mock 이다

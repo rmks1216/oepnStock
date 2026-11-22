@@ -25,6 +25,7 @@ from oepnstock.modules.critical import (
 from oepnstock.utils import MarketDataManager, get_logger
 from oepnstock.utils.krx_data_source import get_data_provider
 from oepnstock.config.settings import config
+from oepnstock.backtest.signal_rules import count_recent_up_days, validate_signal_settings
 
 logger = get_logger(__name__)
 
@@ -49,6 +50,8 @@ class SimpleBacktester:
     def __init__(self, custom_config=None):
         # Use provided config or default global config
         self.config = custom_config if custom_config else config
+        # 성립할 수 없는 신호 설정이면 거래 0회 결과를 내기 전에 멈춘다.
+        validate_signal_settings(self.config.backtest)
         
         # Trading system components
         self.market_analyzer = MarketFlowAnalyzer()
@@ -283,11 +286,9 @@ class SimpleBacktester:
             current_rsi = rsi_clean.iloc[-1] if len(rsi_clean) > 0 else 50
             
             # 최근 상승일 계산 (설정 기반)
-            if len(stock_data) >= 3:
-                recent_changes = stock_data['close'].pct_change().tail(3)
-                up_days = (recent_changes > 0).sum()
-            else:
-                up_days = 1
+            up_days = count_recent_up_days(
+                stock_data['close'], self.config.backtest.recent_up_window
+            )
             
             # 설정 기반 신호 생성
             buy_conditions = [

@@ -38,6 +38,7 @@ class MarkdownYAMLParser:
             'signal_rsi_period': re.compile(r'signal_rsi_period:\s*(\d+)', re.IGNORECASE),
             'signal_rsi_overbought': re.compile(r'signal_rsi_overbought:\s*(\d+)', re.IGNORECASE),
             'min_recent_up_days': re.compile(r'min_recent_up_days:\s*(\d+)', re.IGNORECASE),
+            'recent_up_window': re.compile(r'recent_up_window:\s*(\d+)', re.IGNORECASE),
             'ma_trend_factor': re.compile(r'ma_trend_factor:\s*([\d.]+)', re.IGNORECASE),
             'sell_threshold_ratio': re.compile(r'sell_threshold_ratio:\s*([\d.]+)', re.IGNORECASE),
             'max_single_position_ratio': re.compile(r'max_single_position_ratio:\s*([\d.]+)', re.IGNORECASE),
@@ -112,7 +113,7 @@ class MarkdownYAMLParser:
                 # 직접 포함된 파라미터들
                 for key in ['initial_capital', 'rebalance_frequency', 'signal_ma_short', 
                            'signal_ma_long', 'signal_rsi_period', 'signal_rsi_overbought',
-                           'min_recent_up_days', 'ma_trend_factor', 'sell_threshold_ratio',
+                           'min_recent_up_days', 'recent_up_window', 'ma_trend_factor', 'sell_threshold_ratio',
                            'market_score_threshold', 'max_positions', 'max_single_position_ratio']:
                     if key in block:
                         # 적절한 섹션에 배치
@@ -241,6 +242,7 @@ class MarkdownYAMLParser:
                 'signal_rsi_period': (5, 50),             # 5~50일
                 'signal_rsi_overbought': (50, 90),        # 50~90
                 'min_recent_up_days': (1, 10),            # 1~10일
+                'recent_up_window': (1, 10),              # 1~10일
                 'ma_trend_factor': (0.8, 1.2),           # 0.8~1.2
                 'sell_threshold_ratio': (0.8, 1.0),      # 0.8~1.0
             }

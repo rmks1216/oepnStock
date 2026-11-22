@@ -84,6 +84,7 @@ backtest:
   signal_rsi_period: {backtest.get('signal_rsi_period', 14)}
   signal_rsi_overbought: {backtest.get('signal_rsi_overbought', 70)}
   min_recent_up_days: {backtest.get('min_recent_up_days', 2)}
+  recent_up_window: {backtest.get('recent_up_window', 3)}
   ma_trend_factor: {backtest.get('ma_trend_factor', 1.0)}
   sell_threshold_ratio: {backtest.get('sell_threshold_ratio', 0.95)}
 ```
@@ -105,7 +106,7 @@ trading:
 buy_conditions = [
     ma_short > ma_long * {backtest.get('ma_trend_factor', 1.0)},
     current_rsi < {backtest.get('signal_rsi_overbought', 70)},
-    up_days >= {backtest.get('min_recent_up_days', 2)},
+    up_days >= {backtest.get('min_recent_up_days', 2)},  # 최근 {backtest.get('recent_up_window', 3)}일 중
     market_score >= {trading.get('market_score_threshold', 70)}
 ]
 ```

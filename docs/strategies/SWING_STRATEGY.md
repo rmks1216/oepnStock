@@ -27,6 +27,7 @@ backtest:
   signal_rsi_period: 30
   signal_rsi_overbought: 60
   min_recent_up_days: 4
+  recent_up_window: 5
   ma_trend_factor: 1.05
   sell_threshold_ratio: 0.9
 ```
@@ -48,7 +49,7 @@ trading:
 buy_conditions = [
     ma_short > ma_long * 1.05,
     current_rsi < 60,
-    up_days >= 4,
+    up_days >= 4,  # 최근 5일(recent_up_window) 중
     market_score >= 80
 ]
 ```
