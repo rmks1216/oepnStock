@@ -33,6 +33,10 @@ from typing import Any, Dict, List
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+# .env 의 KRX_ID / KRX_PW 를 읽는다. pykrx 가 import 시점에 로그인하므로 반드시 그보다 먼저 실행한다.
+from dotenv import load_dotenv  # noqa: E402
+load_dotenv(ROOT / ".env")
+
 from oepnstock.utils.krx_data_source import KRXDataProvider  # noqa: E402
 
 DEFAULT_PROFILES = ["default", "aggressive", "conservative", "swing"]

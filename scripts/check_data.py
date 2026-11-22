@@ -24,6 +24,10 @@ from pathlib import Path
 # 프로젝트 루트를 import 경로에 추가
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# .env 의 KRX_ID / KRX_PW 를 읽는다. pykrx 가 import 시점에 로그인하므로 반드시 그보다 먼저 실행한다.
+from dotenv import load_dotenv  # noqa: E402
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 from oepnstock.utils.krx_data_source import KRXDataProvider  # noqa: E402
 
 # 점검 대상 설정
