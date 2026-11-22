@@ -33,6 +33,10 @@ from typing import Any, Dict, List
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+# .env 의 KRX_ID / KRX_PW 를 읽는다. pykrx 가 import 시점에 로그인하므로 반드시 그보다 먼저 실행한다.
+from dotenv import load_dotenv  # noqa: E402
+load_dotenv(ROOT / ".env")
+
 from oepnstock.utils.krx_data_source import KRXDataProvider  # noqa: E402
 
 DEFAULT_PROFILES = ["default", "aggressive", "conservative", "swing"]
@@ -85,8 +89,10 @@ def build_universe(
     """
     tickers = provider.get_ticker_list_at(as_of, market="KOSPI")
     if not tickers:
-        print("경고: 과거 종목 리스트를 받지 못해 기본 종목으로 대체합니다.")
-        return ["005930", "000660", "035420", "005380", "051910"][:size]
+        # 오늘 기준 종목으로 대체하면 생존편향이 다시 생기므로 대체하지 않고 중단한다.
+        print(f"중단: {as_of} 기준 KOSPI 종목 리스트를 받지 못했습니다.")
+        print("      먼저 python scripts/check_data.py 를 실행해 원인을 확인하세요.")
+        raise SystemExit(1)
 
     universe = sorted(tickers)[:size]
     print(f"  종목 유니버스: {as_of} 기준 KOSPI 상장 종목 중 {len(universe)}개")
