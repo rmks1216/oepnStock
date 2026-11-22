@@ -11,7 +11,7 @@ import asyncio
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from oepnstock.utils.free_data_sources import get_data_provider
+from oepnstock.utils.krx_data_source import get_data_provider
 from oepnstock.utils import get_logger
 
 logger = get_logger(__name__)
@@ -47,7 +47,7 @@ class QuickPaperTest:
                 return {'signal': 'NO_DATA', 'reason': 'Price data unavailable'}
             
             # 과거 데이터로 간단한 기술분석
-            hist_data = self.data_provider.get_historical_data(symbol, '1mo')
+            hist_data = self.data_provider.get_recent_data(symbol, days=30)
             if hist_data is None or hist_data.empty:
                 return {'signal': 'NO_DATA', 'reason': 'Historical data unavailable'}
             

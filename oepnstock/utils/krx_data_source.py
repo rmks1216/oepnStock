@@ -29,6 +29,16 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
+# pykrx 는 import 하는 순간 KRX_ID / KRX_PW 로 로그인한다.
+# 그래서 .env 파일을 pykrx import 보다 먼저 읽어 환경변수에 올린다.
+# 이미 셸에 설정된 환경변수가 있으면 그 값을 덮어쓰지 않는다.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:  # pragma: no cover
+    pass
+
 try:
     from pykrx import stock as krx
 except ImportError as exc:  # pragma: no cover
@@ -56,6 +66,10 @@ _INDEX_TICKER: Dict[str, str] = {
     "KOSPI": "1001",
     "KOSDAQ": "2001",
 }
+
+# get_data() 에 종목을 지정하지 않았을 때 쓰는 종목.
+# 오늘 기준 대형주라 생존편향이 있다. 검증용 백테스트는 종목을 직접 넘긴다.
+DEFAULT_SYMBOLS: List[str] = ["005930", "000660", "035420", "051910", "068270"]
 
 
 class KRXDataProvider:
@@ -321,6 +335,79 @@ class KRXDataProvider:
 
         logger.info("요청 %d개 중 %d개 조회 성공", len(symbols), len(result))
         return result
+
+    def get_recent_data(self, symbol: str, days: int = 90) -> Optional[pd.DataFrame]:
+        """오늘부터 거슬러 올라간 최근 일봉을 조회한다.
+
+        페이퍼 트레이딩 예제가 쓰던 yfinance 의 period='1mo' 같은 조회를 대신한다.
+        백테스트에서는 쓰지 않는다. 백테스트는 기준일이 과거이므로
+        get_historical_data 에 기간을 명시해야 한다.
+
+        Args:
+            symbol: 6자리 종목코드.
+            days: 오늘부터 거슬러 올라갈 달력 일수.
+
+        Returns:
+            일봉 데이터프레임. 실패 시 None.
+        """
+        end = date.today()
+        start = end - timedelta(days=days)
+        # 오늘 데이터는 장중에 바뀌므로 캐시를 쓰지 않는다.
+        return self.get_historical_data(symbol, start, end, use_cache=False)
+
+    def get_current_price(self, symbol: str) -> Optional[float]:
+        """가장 최근 영업일 종가를 돌려준다.
+
+        주의: 실시간 체결가가 아니다. KRX 일봉 데이터라 장중에는
+        당일 진행 중인 값이거나 전일 종가다. 실시간 시세가 필요하면
+        증권사 API 를 연결해야 한다.
+
+        Args:
+            symbol: 6자리 종목코드.
+
+        Returns:
+            최근 종가. 실패 시 None.
+        """
+        df = self.get_recent_data(symbol, days=10)
+        if df is None or df.empty:
+            return None
+        return float(df["close"].iloc[-1])
+
+    def get_data(
+        self,
+        start_date: date | str,
+        end_date: date | str,
+        symbols: Optional[List[str]] = None,
+    ) -> pd.DataFrame:
+        """여러 종목 일봉을 긴 형식(date, symbol, OHLCV 컬럼)으로 돌려준다.
+
+        AdvancedBacktester 가 data_source.get_data(start, end) 로 부르는 형식에 맞춘 것이다.
+
+        Args:
+            start_date: 조회 시작일.
+            end_date: 조회 종료일.
+            symbols: 종목코드 리스트. None 이면 DEFAULT_SYMBOLS 를 쓴다.
+
+        Returns:
+            date, symbol, open, high, low, close, volume 컬럼의 데이터프레임.
+
+        Raises:
+            RuntimeError: 한 종목도 조회하지 못했을 때.
+        """
+        symbols = symbols or DEFAULT_SYMBOLS
+        frames = []
+        for symbol, df in self.get_market_data(symbols, start_date, end_date).items():
+            part = df[["open", "high", "low", "close", "volume"]].copy()
+            part["symbol"] = symbol
+            frames.append(part.reset_index())
+
+        if not frames:
+            raise RuntimeError(
+                f"{start_date}~{end_date} 기간에 조회된 종목이 없습니다: {symbols}"
+            )
+
+        result = pd.concat(frames, ignore_index=True)
+        return result.sort_values(["date", "symbol"]).reset_index(drop=True)
 
     def check_connection(self) -> bool:
         """KRX 조회가 실제로 되는지 확인한다.

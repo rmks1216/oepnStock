@@ -23,18 +23,27 @@ from oepnstock.modules.critical import (
     GapTradingStrategy
 )
 from oepnstock.utils import MarketDataManager, get_logger
-from oepnstock.utils.free_data_sources import get_data_provider
+from oepnstock.utils.krx_data_source import get_data_provider
 from oepnstock.config.settings import config
 
 logger = get_logger(__name__)
+
+# 신호 계산용 이동평균·RSI 를 백테스트 첫날부터 계산하려면
+# 시작일 이전 데이터가 필요하다. 그만큼 앞당겨 조회한다(달력 일수).
+LOOKBACK_CALENDAR_DAYS = 150
 
 
 class SimpleBacktester:
     """
     간단한 백테스팅 시스템
-    
-    주의: 이는 개념 검증용 예제입니다.
-    실제 백테스팅에서는 생존편향, 전진편향, 거래비용 등을 더 정교하게 고려해야 합니다.
+
+    가격은 KRX 수정주가 일봉 종가를 쓴다. 신호와 체결 모두 그날 종가 기준이다.
+    조회에 실패한 종목은 거래하지 않고 건너뛴다. 랜덤 데이터로 대체하지 않는다.
+
+    알려진 한계:
+        - 보유 중 상장폐지된 종목은 마지막 종가로 평가가 고정된다.
+          실제로는 정리매매에서 크게 하락하므로 결과가 낙관적으로 나온다.
+        - 신호를 낸 날 종가에 체결한다고 가정한다.
     """
     
     def __init__(self, custom_config=None):
@@ -54,8 +63,12 @@ class SimpleBacktester:
         
         # Data manager
         self.data_manager = MarketDataManager()
+        # KRX 에 연결되지 않으면 여기서 RuntimeError 로 멈춘다.
         self.data_provider = get_data_provider()
-        
+
+        # 종목별 전체 기간 일봉. run_backtest 시작 시 한 번 채운다.
+        self._price_data: Dict[str, pd.DataFrame] = {}
+
         # Backtesting settings from config
         self.initial_capital = self.config.backtest.initial_capital
         self.trading_costs = {
@@ -102,17 +115,18 @@ class SimpleBacktester:
         trade_history = []
         daily_returns = []
         
-        # 날짜별로 백테스트 실행
-        current_date = start_date
+        # 실제 영업일 목록. 공휴일을 주말처럼 건너뛰려면 지수 데이터가 있는 날만 쓴다.
+        calendar = self.data_provider.get_index_data("KOSPI", start_date, end_date)
+        if calendar is None or calendar.empty:
+            raise RuntimeError(f"{start_date}~{end_date} KOSPI 영업일을 조회하지 못했습니다.")
+        trading_days = [ts.date() for ts in calendar.index]
+
+        self._load_price_data(symbols, start_date, end_date)
+
         rebalance_counter = 0
-        
+
         try:
-            while current_date <= end_date:
-                # 주말 스킵
-                if current_date.weekday() >= 5:
-                    current_date += timedelta(days=1)
-                    continue
-                
+            for current_date in trading_days:
                 # 포트폴리오 가치 업데이트
                 portfolio_value = self._update_portfolio_value(portfolio, current_date)
                 
@@ -134,8 +148,7 @@ class SimpleBacktester:
                 
                 portfolio['total_value'] = portfolio_value
                 rebalance_counter += 1
-                current_date += timedelta(days=1)
-            
+
             # 백테스트 결과 분석
             results = self._analyze_backtest_results(
                 daily_returns, trade_history, portfolio
@@ -152,23 +165,32 @@ class SimpleBacktester:
                 'trades': len(trade_history)
             }
     
+    def _load_price_data(self, symbols: List[str], start_date: date, end_date: date) -> None:
+        """백테스트 기간 전체 일봉을 종목별로 한 번에 조회해 둔다."""
+        fetch_start = start_date - timedelta(days=LOOKBACK_CALENDAR_DAYS)
+        self._price_data = self.data_provider.get_market_data(symbols, fetch_start, end_date)
+
+        missing = [s for s in symbols if s not in self._price_data]
+        if missing:
+            logger.warning(f"데이터가 없어 거래에서 제외하는 종목 {len(missing)}개: {missing}")
+        if not self._price_data:
+            raise RuntimeError("조회된 종목이 하나도 없어 백테스트를 진행할 수 없습니다.")
+
     def _update_portfolio_value(self, portfolio: Dict, current_date: date) -> float:
-        """포트폴리오 가치 업데이트"""
+        """보유 종목을 그날 종가로 평가한다.
+
+        그날 데이터가 없으면(거래정지·상장폐지) 마지막으로 알려진 종가를 유지한다.
+        """
         total_value = portfolio['cash']
-        
-        # Mock 가격 업데이트 (실제로는 시장 데이터 사용)
+
         for position in portfolio['positions']:
-            # 간단한 랜덤 워크로 가격 변동 시뮬레이션
-            np.random.seed(hash(f"{position['symbol']}{current_date}") % 2**32)
-            daily_change = np.random.normal(0.001, 0.02)  # 평균 0.1% 상승, 2% 변동성
-            
-            new_price = position['current_price'] * (1 + daily_change)
-            new_price = max(new_price, position['avg_price'] * 0.5)  # 최대 50% 하락 제한
-            
-            position['current_price'] = new_price
-            position['market_value'] = position['quantity'] * new_price
+            history = self._get_real_price_data(position['symbol'], current_date)
+            if not history.empty:
+                position['current_price'] = float(history['close'].iloc[-1])
+
+            position['market_value'] = position['quantity'] * position['current_price']
             total_value += position['market_value']
-        
+
         return total_value
     
     def _rebalance_portfolio(self, portfolio: Dict, symbols: List[str], 
@@ -180,7 +202,11 @@ class SimpleBacktester:
             # 각 종목에 대해 매매 신호 생성
             for symbol in symbols:
                 signal = self._generate_trading_signal(symbol, current_date)
-                
+
+                # 가격을 모르는 날(데이터 없음·거래정지)에는 주문하지 않는다.
+                if signal.get('price') is None:
+                    continue
+
                 if signal['action'] == 'BUY':
                     trade = self._execute_buy_order(portfolio, signal)
                     if trade:
@@ -202,15 +228,24 @@ class SimpleBacktester:
         try:
             # 실제 시장 데이터 사용
             stock_data = self._get_real_price_data(symbol, current_date)
-            
-            # 데이터 충분성 확인
-            if len(stock_data) < 30:
-                # 데이터가 부족하면 기본 신호 반환
+
+            # 그날 거래가 없었으면(거래정지·상장폐지) 지난 가격으로 주문하지 않는다.
+            if stock_data.empty or stock_data.index[-1].date() != current_date:
                 return {
                     'symbol': symbol,
                     'action': 'HOLD',
                     'confidence': 0.0,
-                    'price': stock_data['close'].iloc[-1] if len(stock_data) > 0 else 50000,
+                    'price': None,
+                    'date': current_date
+                }
+
+            # 데이터 충분성 확인
+            if len(stock_data) < 30:
+                return {
+                    'symbol': symbol,
+                    'action': 'HOLD',
+                    'confidence': 0.0,
+                    'price': stock_data['close'].iloc[-1],
                     'date': current_date
                 }
             
@@ -288,46 +323,20 @@ class SimpleBacktester:
                 'symbol': symbol,
                 'action': 'HOLD',
                 'confidence': 0.0,
-                'price': 50000,  # Default price
+                'price': None,
                 'date': current_date
             }
-    
+
     def _get_real_price_data(self, symbol: str, end_date: date) -> pd.DataFrame:
-        """실제 가격 데이터 조회"""
-        try:
-            # 실제 데이터 조회
-            hist_data = self.data_provider.get_historical_data(symbol, period="3mo")
-            
-            if hist_data is not None and not hist_data.empty:
-                # 종료일까지의 데이터만 사용 (timezone-aware comparison)
-                end_timestamp = pd.Timestamp(end_date).tz_localize(hist_data.index.tz)
-                hist_data = hist_data[hist_data.index <= end_timestamp]
-                return hist_data[['close']].rename(columns={'close': 'close'})
-            
-        except Exception as e:
-            logger.warning(f"Failed to get real data for {symbol}: {e}")
-        
-        # Fallback to mock data
-        return self._create_mock_price_data(symbol, end_date)
-    
-    def _create_mock_price_data(self, symbol: str, end_date: date) -> pd.DataFrame:
-        """Mock 가격 데이터 생성 (Fallback용)"""
-        start_date = end_date - timedelta(days=30)
-        dates = pd.date_range(start=start_date, end=end_date, freq='D')
-        
-        # 심볼별로 다른 시드로 재현 가능한 데이터 생성
-        np.random.seed(hash(symbol) % 2**32)
-        base_price = 50000 + hash(symbol) % 50000
-        
-        prices = [base_price]
-        for i in range(1, len(dates)):
-            change = np.random.normal(0.002, 0.02)
-            new_price = prices[-1] * (1 + change)
-            prices.append(max(new_price, base_price * 0.7))
-        
-        return pd.DataFrame({
-            'close': prices
-        }, index=dates)
+        """end_date 까지의 종가만 돌려준다. 미래 데이터는 잘라 낸다.
+
+        데이터가 없는 종목이면 빈 데이터프레임을 돌려준다.
+        """
+        hist_data = self._price_data.get(symbol)
+        if hist_data is None or hist_data.empty:
+            return pd.DataFrame(columns=['close'])
+
+        return hist_data.loc[hist_data.index <= pd.Timestamp(end_date), ['close']]
     
     def _execute_buy_order(self, portfolio: Dict, signal: Dict) -> Dict:
         """매수 주문 실행"""

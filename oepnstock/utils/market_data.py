@@ -55,12 +55,12 @@ class MarketDataManager:
         self.cache_expiry = {}
         self.cache_ttl = 300  # 5 minutes default TTL
         
-        # Data source priorities (실제 API 연동시 사용)
+        # 시세 조회 우선순위. 앞에서 실패하면 다음 소스를 시도한다.
+        # 'mock'(랜덤워크)은 넣지 않는다. 모두 실패하면 예외를 던진다.
         self.data_sources = [
-            'korea_investment',  # Primary
-            'kiwoom',           # Secondary  
-            'yahoo_finance',    # Fallback
-            'mock'              # Development/testing
+            'krx',               # KRX 공식 일봉 (pykrx)
+            'korea_investment',  # 미구현
+            'kiwoom',            # 미구현
         ]
         
         # Real-time data subscriptions
@@ -102,10 +102,10 @@ class MarketDataManager:
                     logger.warning(f"Failed to fetch from {source}: {e}")
                     continue
             
-            # All sources failed - return mock data for development
-            logger.warning(f"All data sources failed for {symbol}, returning mock data")
-            return self._generate_mock_data(symbol, start_date, end_date)
-            
+            # 모든 소스가 실패하면 랜덤 데이터로 대체하지 않고 멈춘다.
+            # 대체하면 가짜 데이터로 낸 결과가 실데이터 결과처럼 보이기 때문이다.
+            raise RuntimeError(f"{symbol} 시세를 어느 데이터 소스에서도 받지 못했습니다.")
+
         except Exception as e:
             logger.error(f"Error fetching data for {symbol}: {e}")
             raise
@@ -394,10 +394,9 @@ class MarketDataManager:
                           start_date: Optional[date], end_date: Optional[date],
                           interval: str) -> Optional[pd.DataFrame]:
         """Fetch data from specific source"""
-        if source == 'mock':
-            return self._generate_mock_data(symbol, start_date, end_date)
-        
-        # Real API implementations would go here
+        if source == 'krx':
+            return self._fetch_from_krx(symbol, start_date, end_date, interval)
+
         elif source == 'korea_investment':
             # Korea Investment Securities API
             return self._fetch_from_korea_investment(symbol, start_date, end_date, interval)
@@ -512,7 +511,24 @@ class MarketDataManager:
         return self._generate_mock_data(f"SECTOR_{sector}", start_date, end_date)
     
     # API-specific methods (placeholders for real implementation)
-    
+
+    def _fetch_from_krx(self, symbol: str, start_date: Optional[date],
+                        end_date: Optional[date], interval: str) -> Optional[pd.DataFrame]:
+        """KRX 공식 일봉(수정주가)을 조회한다. 'KOSPI'/'KOSDAQ' 은 지수로 조회한다."""
+        if interval != '1d':
+            logger.warning(f"KRX 데이터는 일봉만 지원합니다(요청: {interval}).")
+            return None
+
+        # pykrx 는 import 시 KRX 로그인을 하므로 실제로 쓸 때만 불러온다.
+        from .krx_data_source import krx_data
+
+        end_date = end_date or date.today()
+        start_date = start_date or end_date - timedelta(days=100)
+
+        if symbol.upper() in ('KOSPI', 'KOSDAQ'):
+            return krx_data.get_index_data(symbol, start_date, end_date)
+        return krx_data.get_historical_data(symbol, start_date, end_date)
+
     def _fetch_from_korea_investment(self, symbol: str, start_date: Optional[date],
                                    end_date: Optional[date], interval: str) -> Optional[pd.DataFrame]:
         """Fetch from Korea Investment Securities API"""

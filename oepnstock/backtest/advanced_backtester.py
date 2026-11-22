@@ -217,51 +217,22 @@ class AdvancedBacktester:
         return result
     
     def _load_market_data(self, start_date: str, end_date: str) -> pd.DataFrame:
-        """시장 데이터 로드"""
+        """시장 데이터 로드.
+
+        data_source 를 넘기지 않으면 KRX 공식 데이터를 쓴다.
+        조회에 실패하면 빈 데이터프레임을 돌려주고, 호출한 쪽이 ValueError 로 멈춘다.
+        랜덤 데이터로 대체하지 않는다.
+        """
         try:
-            if self.data_source:
-                return self.data_source.get_data(start_date, end_date)
-            else:
-                # 가상 데이터 생성 (실제 구현에서는 실제 데이터 사용)
-                return self._generate_mock_data(start_date, end_date)
+            if self.data_source is None:
+                # pykrx 는 import 시 KRX 로그인을 하므로 실제로 쓸 때만 불러온다.
+                from ..utils.krx_data_source import krx_data
+                self.data_source = krx_data
+            return self.data_source.get_data(start_date, end_date)
         except Exception as e:
             logger.error(f"Failed to load market data: {e}")
             return pd.DataFrame()
-    
-    def _generate_mock_data(self, start_date: str, end_date: str) -> pd.DataFrame:
-        """테스트용 가상 데이터 생성"""
-        dates = pd.date_range(start_date, end_date, freq='D')
-        dates = dates[dates.weekday < 5]  # 주말 제외
-        
-        n_days = len(dates)
-        np.random.seed(42)  # 재현 가능한 결과
-        
-        # 가상 종목 데이터 생성
-        symbols = ['005930', '000660', '035420', '051910', '068270']
-        data_list = []
-        
-        for symbol in symbols:
-            # 랜덤 워크 + 트렌드
-            base_price = 50000 + np.random.randint(0, 100000)
-            returns = np.random.normal(0.0005, 0.02, n_days)  # 일일 수익률
-            
-            prices = [base_price]
-            for ret in returns[1:]:
-                prices.append(prices[-1] * (1 + ret))
-            
-            for i, date in enumerate(dates):
-                data_list.append({
-                    'date': date,
-                    'symbol': symbol,
-                    'open': prices[i] * (1 + np.random.normal(0, 0.005)),
-                    'high': prices[i] * (1 + abs(np.random.normal(0, 0.01))),
-                    'low': prices[i] * (1 - abs(np.random.normal(0, 0.01))),
-                    'close': prices[i],
-                    'volume': np.random.randint(100000, 1000000)
-                })
-        
-        return pd.DataFrame(data_list)
-    
+
     def _execute_strategy(self, strategy, market_data: pd.DataFrame, 
                          initial_capital: float) -> Tuple[pd.Series, List[Dict], Dict]:
         """전략 실행"""

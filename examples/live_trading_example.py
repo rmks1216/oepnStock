@@ -23,7 +23,7 @@ from oepnstock.modules.critical import (
     GapTradingStrategy
 )
 from oepnstock.utils import MarketDataManager, get_logger
-from oepnstock.utils.free_data_sources import get_data_provider
+from oepnstock.utils.krx_data_source import get_data_provider
 from oepnstock.config import config
 
 logger = get_logger(__name__)
